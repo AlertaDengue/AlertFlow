@@ -1,0 +1,5 @@
+.git*
+.coverage
+.vscode
+.pre-commit*
+.release*

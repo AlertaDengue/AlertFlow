@@ -1,0 +1,1 @@
+FROM apache/airflow:latest
