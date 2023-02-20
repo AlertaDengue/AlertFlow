@@ -17,6 +17,10 @@ blue = "^0.9.1"
 flake8 = ">=3.8"
 isort = "^5.12.0"
 
+
+[tool.poetry.group.dev.dependencies]
+docker-compose = "^1.29.2"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
