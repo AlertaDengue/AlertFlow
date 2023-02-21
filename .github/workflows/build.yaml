@@ -36,7 +36,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Conda
+    - name: Semantic Release Title Check
+      uses: osl-incubator/semantic-release-pr-title-check@v1.4.1
+      with:
+        convention-name: conventionalcommits
+
+    - name: Install Conda Dependencies
       uses: conda-incubator/setup-miniconda@v2
       with:
         miniconda-version: "latest"
@@ -47,12 +52,12 @@ jobs:
         use-mamba: true
         miniforge-variant: Mambaforge
 
-    - name: Poetry
+    - name: Install Poetry Dependencies
       run: |
         touch .env
         poetry install
 
-    - name: Linting
+    - name: Lint All Files
       run: |
         make linter
 
