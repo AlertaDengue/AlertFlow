@@ -29,3 +29,11 @@ The [compose](docker/compose.yaml) file will be responsible for building and run
 $ make containers-start
 $ make containers-stop
 ```
+
+# Committing
+
+## Commits format
+AlertFlow uses [Semantic Release](https://github.com/semantic-release/semantic-release) commit format, please read SM documentation before committing.
+
+## Linting
+Format code using `make linter`. Note that linting is a required step to pass on CI.
