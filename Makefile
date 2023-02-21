@@ -6,7 +6,6 @@ TIMEOUT:=180
 
 include .env
 
-
 # -- Docker --
 SERVICES=
 
@@ -32,7 +31,6 @@ containers-stop:
 
 .PHONY: env
 env:
-	touch .env
 	envsubst < env.tpl > .env
 
 .PHONY: linter
