@@ -40,7 +40,7 @@ jobs:
     - name: Test release
       if: ${{ github.event_name != 'workflow_dispatch' }}
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         npx --yes \
           -p semantic-release \
@@ -57,7 +57,7 @@ jobs:
     - name: Release
       if: ${{ github.event_name == 'workflow_dispatch' }}
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         npx --yes \
           -p semantic-release \

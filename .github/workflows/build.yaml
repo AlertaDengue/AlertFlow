@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
 
 jobs:
   main:
@@ -33,3 +32,13 @@ jobs:
         use-mamba: true
         miniforge-variant: Mambaforge
 
+    - name: Poetry
+      run: poetry install
+
+    - name: Linting
+      run: pre-commit run --all-files
+
+    # debugging
+    - name: Setup tmate session
+      # if: ${{ failure() }}
+      uses: mxschmitt/action-tmate@v3

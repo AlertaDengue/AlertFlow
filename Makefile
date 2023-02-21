@@ -6,6 +6,8 @@ TIMEOUT:=180
 
 include .env
 
+
+# -- Docker --
 SERVICES=
 
 COMPOSE=docker-compose \
@@ -24,4 +26,11 @@ containers-start:
 
 .PHONY:containers-stop
 containers-stop:
-	$(COMPOSE) down -v --remove-orphans 
+	$(COMPOSE) down -v --remove-orphans
+
+# --
+
+.PHONY:env
+env:
+	touch .env
+	envsubst < env.tpl > .env
