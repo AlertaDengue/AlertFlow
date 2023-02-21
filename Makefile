@@ -16,21 +16,25 @@ COMPOSE=docker-compose \
 	--file docker/compose.yaml \
 
 
-.PHONY:containers-build
+.PHONY: containers-build
 containers-build:
 	$(COMPOSE) build ${SERVICES}
 
-.PHONY:containers-start
+.PHONY: containers-start
 containers-start:
 	$(COMPOSE) up -d ${SERVICES}
 
-.PHONY:containers-stop
+.PHONY: containers-stop
 containers-stop:
 	$(COMPOSE) down -v --remove-orphans
 
 # --
 
-.PHONY:env
+.PHONY: env
 env:
 	touch .env
 	envsubst < env.tpl > .env
+
+.PHONY: linter
+linter:
+	pre-commit run --all-files --verbose

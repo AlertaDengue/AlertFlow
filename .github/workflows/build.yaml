@@ -36,9 +36,9 @@ jobs:
       run: poetry install
 
     - name: Linting
-      run: pre-commit run --all-files
+      run: make linter
 
     # debugging
     - name: Setup tmate session
-      # if: ${{ failure() }}
+      if: ${{ failure() }}
       uses: mxschmitt/action-tmate@v3
