@@ -12,8 +12,8 @@
           "replacements": [
             {
               "files": ["alertflow/__init__.py"],
-              "from": "return \".*\"  # changed by semantic-release",
-              "to": "return \"${nextRelease.version}\"  # changed by semantic-release",
+              "from": "return '.*'  # changed by semantic-release",
+              "to": "return '${nextRelease.version}'  # changed by semantic-release",
               "results": [
                 {
                   "file": "alertflow/__init__.py",
