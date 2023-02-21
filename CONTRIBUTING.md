@@ -13,7 +13,7 @@ $ conda activate alertflow
 
 ## Install dev dependencies with Poetry
 ``` bash
-$ poetry install 
+$ poetry install
 ```
 
 ## Configure environment variables
