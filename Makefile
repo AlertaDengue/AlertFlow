@@ -15,9 +15,10 @@ COMPOSE=docker-compose \
 	--file docker/compose.yaml \
 
 
-.PHONY: containers-build
-containers-build:
-	$(COMPOSE) build ${SERVICES}
+# No need until Dockerfile setup
+# .PHONY: containers-build
+# containers-build:
+# 	$(COMPOSE) build ${SERVICES}
 
 .PHONY: containers-start
 containers-start:
@@ -26,6 +27,10 @@ containers-start:
 .PHONY: containers-stop
 containers-stop:
 	$(COMPOSE) down -v --remove-orphans
+
+# .PHONY: containers-wait
+# containers-wait:
+    # TODO
 
 # --
 
