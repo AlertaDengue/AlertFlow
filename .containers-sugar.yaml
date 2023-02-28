@@ -1,0 +1,36 @@
+version: 1.0.0
+compose-app: docker-compose
+service-groups:
+  - name: base
+    project-name: alertflow
+    compose-path: docker/compose-base.yaml
+    env-file: .env
+    services:
+      default: base
+      list:
+        - name: base
+
+
+  # - name: group2
+  #   project-name: null  # optional
+  #   compose-path: containers/tests/group2/compose.yaml
+  #   env-file: .env
+  #   services:
+  #     default: null
+  #     list:
+  #       - name: service2-1
+  #       - name: service2-2
+
+  # - name: group-mix
+  #   project-name: null  # optional
+  #   compose-path:
+  #     - containers/tests/group1/compose.yaml
+  #     - containers/tests/group2/compose.yaml
+  #   env-file: .env
+  #   services:
+  #     default: null
+  #     list:
+  #       - name: service1-1
+  #       - name: service1-2
+  #       - name: service2-1
+  #       - name: service2-2

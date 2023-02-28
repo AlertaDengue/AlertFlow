@@ -12,13 +12,12 @@ SERVICES=
 COMPOSE=docker-compose \
 	--env-file .env \
 	--project-name AlertFlow \
-	--file docker/compose.yaml \
+	--file docker/compose.yaml\
 
 
-# No need until Dockerfile setup
-# .PHONY: containers-build
-# containers-build:
-# 	$(COMPOSE) build ${SERVICES}
+.PHONY: containers-build
+containers-build:
+	$(COMPOSE) build ${SERVICES}
 
 .PHONY: containers-start
 containers-start:
@@ -33,6 +32,10 @@ containers-stop:
     # TODO
 
 # --
+
+.PHONY: airflow-cli
+airflow-cli:
+	./docker/scripts/airflow.sh "${@}"
 
 .PHONY: env
 env:

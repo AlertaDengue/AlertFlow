@@ -7,7 +7,9 @@ license = "GNU"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">= 3.9"
+python = ">= 3.9, <4"
+containers-sugar = "1.4.1"
+apache-airflow = {extras = ["async,celery,dask,docker,elasticsearch,ftp,grpc,hashicorp,http,ldap,pandas,postgres,redis,sendgrid,sftp,ssh,statsd"], version = "^2.5.1"}
 
 
 [tool.poetry.group.pre-commit.dependencies]
