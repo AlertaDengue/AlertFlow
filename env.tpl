@@ -18,5 +18,5 @@ PSQL_DB=
 # Do not change
 AIRFLOW_CONN_POSTGRES_MAIN='postgresql://${PSQL_USER}:${PSQL_PASSWORD}@${PSQL_HOST}:${PSQL_PORT}/${PSQL_DB}'
 
-# Extras [pip]
-_PIP_ADDITIONAL_REQUIREMENTS=docker/requirements.txt
+# Extras
+AIRFLOW__CORE__FERNET_KEY=''
