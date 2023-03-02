@@ -10,27 +10,17 @@ service-groups:
       list:
         - name: base
 
-
-  # - name: group2
-  #   project-name: null  # optional
-  #   compose-path: containers/tests/group2/compose.yaml
-  #   env-file: .env
-  #   services:
-  #     default: null
-  #     list:
-  #       - name: service2-1
-  #       - name: service2-2
-
-  # - name: group-mix
-  #   project-name: null  # optional
-  #   compose-path:
-  #     - containers/tests/group1/compose.yaml
-  #     - containers/tests/group2/compose.yaml
-  #   env-file: .env
-  #   services:
-  #     default: null
-  #     list:
-  #       - name: service1-1
-  #       - name: service1-2
-  #       - name: service2-1
-  #       - name: service2-2
+  - name: airflow
+    project-name: alertflow
+    compose-path: docker/compose.yaml
+    env-file: .env
+    services:
+      default: core_postgres,core_redis,webserver,core_scheduler,core_worker,core_triggerer
+      list:
+        - name: core_postgres
+        - name: core_redis
+        - name: webserver
+        - name: core_scheduler
+        - name: core_worker
+        - name: core_triggerer
+        - name: core_flower

@@ -1,30 +1,13 @@
 services:
   base:
     env_file: ../.env
+    environment:
+      AIRFLOW_HOME: /opt/alertflow
     build:
       context: ..
       dockerfile: docker/Dockerfile
     entrypoint: /bin/bash
-    environment:
-      AIRFLOW_PROJ_DIR: ${AIRFLOW_PROJ_DIR}
-      AIRFLOW_UID: ${AIRFLOW_UID}
-      AIRFLOW_GID: ${AIRFLOW_GID}
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
-      AIRFLOW_CONN_POSTGRES_MAIN: ${AIRFLOW_CONN_POSTGRES_MAIN}
-      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@core_postgres/airflow
-      # For backward compatibility, with Airflow <2.3
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@core_postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@core_postgres/airflow
-      AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
-      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-      AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
-      AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
-      _AIRFLOW_DB_UPGRADE: 'true'
-      _AIRFLOW_WWW_USER_CREATE: 'true'
     volumes:
-      - ${AIRFLOW_PROJ_DIR}/dags:/opt/alertflow/dags
-      - ${AIRFLOW_PROJ_DIR}/logs:/opt/alertflow/logs
-      - ${AIRFLOW_PROJ_DIR}/plugins:/opt/alertflow/plugins
+      - ${AIRFLOW_PROJ_HOST_DIR}/dags:/opt/alertflow/dags
+      - ${AIRFLOW_PROJ_HOST_DIR}/logs:/opt/alertflow/logs
+      - ${AIRFLOW_PROJ_HOST_DIR}/plugins:/opt/alertflow/plugins

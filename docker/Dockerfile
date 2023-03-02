@@ -1,6 +1,5 @@
 FROM condaforge/mambaforge as base
 
-ARG AIRFLOW_EXTRAS="amazon,async,celery,dask,docker,elasticsearch,ftp,grpc,hashicorp,http,ldap,odbc,pandas,postgres,redis,sendgrid,sftp,slack,ssh,statsd,virtualenv"
 ENV ENV_NAME=alertadengue
 
 USER root
@@ -31,6 +30,7 @@ RUN apt-get -qq update --yes \
   tox \
   lcov \
   valgrind \
+  unixodbc-dev \
   && rm -rf /var/lib/apt/lists/*
 
 #Set locale
@@ -55,28 +55,26 @@ RUN addgroup --gid 1000 airflow \
 ENV PATH "$PATH:/home/airflow/.local/bin"
 ENV PATH /opt/conda/envs/$ENV_NAME/bin:$PATH
 
-# Copy dependencies file
-COPY --chown=airflow:airflow conda/env.yaml /tmp/conda/env.yaml
-COPY --chown=airflow:airflow docker/scripts/entrypoint.sh /activate.sh
-
 USER airflow
 
 # Change shell to bash
 SHELL ["/bin/bash", "-c"]
+WORKDIR /opt/alertflow
 
 # Use environment to create the env-satellite
+COPY --chown=airflow:airflow conda/env.yaml /tmp/conda/env.yaml
 RUN mamba env create -n $ENV_NAME -f /tmp/conda/env.yaml \
   && conda clean --all \
   && find /opt/conda/ -type f,l -name '*.a' -delete \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
   && find /opt/conda/ -type f,l -name '*.js.map' -delete
 
+COPY --chown=airflow:airflow docker/airflow-extras.in /tmp/airflow-extras.in
+RUN pip install --root-user-action ignore -r /tmp/airflow-extras.in
+
 COPY --chown=airflow:airflow poetry.lock pyproject.toml airflow.cfg /opt/alertflow/
 COPY --chown=airflow:airflow docker/scripts/poetry.sh /tmp/poetry-install.sh
-
-WORKDIR /opt/alertflow
-
-RUN pip install --root-user-action ignore "apache-airflow[${AIRFLOW_EXTRAS}] >= 2.5.1" 
 RUN bash /tmp/poetry-install.sh
 
-ENTRYPOINT ["bash", "/activate.sh"]
+COPY --chown=airflow:airflow docker/scripts/entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["bash", "/entrypoint.sh"]
