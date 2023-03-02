@@ -1,25 +1,20 @@
-default_language_version:
-  python: python3.11
-
-default_stages: [commit, push]
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v4.1.0
     hooks:
-      - id: check-yaml
-      - id: trailing-whitespace
       - id: end-of-file-fixer
-        exclude: LICENSE
 
   - repo: local
     hooks:
     - entry: blue
-      exclude: ^$
-      files: ""
       id: blue
-      language: system
       name: blue
+      exclude: |
+        (?x)(
+          docs
+        )
+      files: ""
+      language: system
       pass_filenames: true
       stages:
         - commit
@@ -27,7 +22,7 @@ repos:
         - python
         - file
         - python
-      types_or: []
+
     - entry: flake8
       exclude: ^$
       files: ""
@@ -39,13 +34,25 @@ repos:
         - commit
       types:
         - python
-      types_or: []
+
     - entry: isort
       exclude: "^.*/js/.*$"
       files: ""
       id: isort
       language: python
       name: isort
+      pass_filenames: true
+      stages:
+        - commit
+      types:
+        - python
+
+    - entry: mypy
+      exclude: ^$
+      files: "alertflow/"
+      id: mypy
+      language: python
+      name: mypy
       pass_filenames: true
       stages:
         - commit

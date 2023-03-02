@@ -7,32 +7,21 @@ TIMEOUT:=180
 include .env
 
 # -- Docker --
-SERVICES=
-
-COMPOSE=docker-compose \
-	--env-file .env \
-	--project-name AlertFlow \
-	--file docker/compose.yaml \
-
-
-# No need until Dockerfile setup
-# .PHONY: containers-build
-# containers-build:
-# 	$(COMPOSE) build ${SERVICES}
+.PHONY: containers-build
+containers-build:
+	containers-sugar --group base build
 
 .PHONY: containers-start
 containers-start:
-	$(COMPOSE) up -d ${SERVICES}
+	containers-sugar --group airflow start
 
-.PHONY: containers-stop
-containers-stop:
-	$(COMPOSE) down -v --remove-orphans
+.PHONY: containers-down
+containers-down:
+	containers-sugar --group airflow down
 
 # .PHONY: containers-wait
 # containers-wait:
     # TODO
-
-# --
 
 .PHONY: env
 env:

@@ -1,0 +1,13 @@
+services:
+  base:
+    env_file: ../.env
+    environment:
+      AIRFLOW_HOME: /opt/alertflow
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    entrypoint: /bin/bash
+    volumes:
+      - ${AIRFLOW_PROJ_HOST_DIR}/dags:/opt/alertflow/dags
+      - ${AIRFLOW_PROJ_HOST_DIR}/logs:/opt/alertflow/logs
+      - ${AIRFLOW_PROJ_HOST_DIR}/plugins:/opt/alertflow/plugins
