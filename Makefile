@@ -23,11 +23,6 @@ containers-down:
 # containers-wait:
     # TODO
 
-
-.PHONY: airflow-cli
-airflow-cli:
-	./docker/scripts/airflow.sh "${@}"
-
 .PHONY: env
 env:
 	envsubst < env.tpl > .env
