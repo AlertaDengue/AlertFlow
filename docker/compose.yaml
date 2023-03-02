@@ -159,4 +159,4 @@ services:
       <<: *airflow-common-depends-on
 
 volumes:
-  postgres-db-volume: 
+  postgres-db-volume:

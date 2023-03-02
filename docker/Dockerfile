@@ -45,7 +45,7 @@ RUN addgroup --gid 1000 airflow \
   && chmod 0440 /etc/sudoers.d/airflow \
   && export ENV_NAME="$ENV_NAME" \
   && mkdir -p \
-    /opt/conda \ 
+    /opt/conda \
     /opt/alertflow/ \
   && chmod -R a+rwx /opt/conda /opt/alertflow /tmp \
   && chown -R airflow:airflow /opt/alertflow/ /tmp \

@@ -10,6 +10,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">= 3.9, <4"
 containers-sugar = "1.4.1"
+mypy = "^1.0.1"
 
 
 [tool.poetry.group.pre-commit.dependencies]
