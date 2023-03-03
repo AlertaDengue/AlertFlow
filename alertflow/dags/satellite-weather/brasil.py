@@ -1,5 +1,3 @@
-# CENTRALIZE ON {{ ds }}
-# download daily file
 import os
 import asyncpg
 import asyncio
