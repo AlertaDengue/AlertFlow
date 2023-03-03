@@ -13,7 +13,6 @@ x-airflow-common:
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
     _AIRFLOW_DB_UPGRADE: 'true'
     _AIRFLOW_WWW_USER_CREATE: 'true'
-    AIRFLOW_CONN_POSTGRES_MAIN: ${AIRFLOW_CONN_POSTGRES_MAIN}
   volumes:
     &airflow-common-volumes
     - ${AIRFLOW_PROJ_HOST_DIR}/dags:/opt/alertflow/dags
