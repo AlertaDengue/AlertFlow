@@ -13,7 +13,7 @@ from airflow import DAG
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator
-from satellite_weather._brazil.extract_latlons import MUNICIPIOS
+
 
 env = os.getenv
 email_main = env('EMAIL_MAIN')
@@ -39,19 +39,16 @@ PG_URI_MAIN = (
 )
 
 
-
-
-## Dags
-### Brasil
 @dag(
-    dag_id='COPERNICUS_BRASIL',
-    description='ETL of weather data for Brazil',
+    dag_id='COPERNICUS_FOZ_DO_IGACU',
+    description='ETL of weather data for Foz do Iguaçu - BR',
     tags=['Brasil', 'Copernicus'],
-    schedule_interval='@daily',
+    schedule_interval='@weekly',
     start_date=pendulum.datetime(2000, 1, 1),
     default_args=DEFAULT_ARGS,
 )
-def brasil():
+def foz_do_iguacu():
+
     ## Tasks
     @task(task_id='start')
     def initial_task():
@@ -122,13 +119,11 @@ def brasil():
         trigger_rule='one_success',
     )
 
-
     async def _load_and_insert(file):
         dataset = sat_w.load_dataset(file)
-        for mun in MUNICIPIOS:
-            df = dataset.copebr.to_dataframe(mun['geocodigo'], raw=True)
-            insert = await _to_sql(df, 'copernicus_brasil')
-            return insert
+        df = dataset.copebr.to_dataframe(4108304, raw=True)
+        insert = await _to_sql(df, 'copernicus_foz_do_iguacu')
+        return insert
 
     @task(task_id='loading')
     def loading(**kwargs):
@@ -139,7 +134,7 @@ def brasil():
         return res
 
     start = initial_task()
-    E = download_netcdf()
+    E = download_netcdf(data_days_interval=7)
     L = loading()
     clean = delete_netcdf()
 
@@ -147,4 +142,4 @@ def brasil():
     check_date >> stop >> done
     check_date >> proceed >> E >> L >> clean >> done
 
-dag = brasil()
+dag = foz_do_iguacu()

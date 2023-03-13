@@ -36,7 +36,7 @@ RUN apt-get -qq update --yes \
 #Set locale
 RUN sed -i -e "s/# pt_BR.*/pt_BR.UTF-8 UTF-8/" /etc/locale.gen \
     && dpkg-reconfigure --frontend=noninteractive locales \
-    && update-locale LANG=pt_BR.UTF-8
+    && update-locale LANG=pt_BR.UTF-8 
 
 # Create airflow user
 RUN addgroup --gid 1000 airflow \
