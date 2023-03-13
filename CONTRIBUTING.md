@@ -23,11 +23,12 @@ found in the `env.tpl` file. The variables with double brackets `{{}}` can be re
 $ make env
 ```
 
-# Starting containers
+# Building & Starting containers
 The [compose](docker/compose.yaml) file will be responsible for building and running all containers, use `make` commands to run & stop the containers
 ``` bash
+$ make containers-build
 $ make containers-start
-$ make containers-stop
+$ make containers-down
 ```
 
 # Committing

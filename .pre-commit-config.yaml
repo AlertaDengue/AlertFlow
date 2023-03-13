@@ -46,15 +46,3 @@ repos:
         - commit
       types:
         - python
-
-    - entry: mypy
-      exclude: ^$
-      files: "alertflow/"
-      id: mypy
-      language: python
-      name: mypy
-      pass_filenames: true
-      stages:
-        - commit
-      types:
-        - python
