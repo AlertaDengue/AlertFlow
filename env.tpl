@@ -2,8 +2,8 @@
 AIRFLOW_PROJ_HOST_DIR="{{ pwd }}/alertflow"
 AIRFLOW_VOLUMES_HOST_DIR="{{ pwd }}/volumes"
 AIRFLOW_IMAGE_NAME=apache/airflow:2.5.1
-AIRFLOW_UID="{{ id -u }}"
-AIRFLOW_GID="{{ id -g }}"
+HOST_UID="{{ id -u }}"
+HOST_GID="{{ id -g }}"
 
 # Web
 _AIRFLOW_WWW_USER_USERNAME=
@@ -17,7 +17,6 @@ PSQL_HOST=
 PSQL_PORT=
 PSQL_DB=
 # Do not change
-AIRFLOW_CONN_POSTGRES_MAIN='postgresql://${PSQL_USER}:${PSQL_PASSWORD}@${PSQL_HOST}:${PSQL_PORT}/${PSQL_DB}'
 
 # Extras
 AIRFLOW__CORE__FERNET_KEY=''
