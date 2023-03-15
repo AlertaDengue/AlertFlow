@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 import satellite_weather as sat_w
 import satellite_downloader as sat_d
+from satellite_downloader import connection
 from satellite_weather._brazil.extract_latlons import MUNICIPIOS
 
 from airflow import DAG
@@ -51,17 +52,23 @@ with DAG(
 ):
 
     def download_netcdf(ini_date: str) -> PosixPath:
+        connection.connect(uid=UID, key=KEY)
         start_date = parser.parse(str(ini_date)).date()
         max_update_delay = start_date - timedelta(days=9)
+        print('---------------------------------------------')
+        print(max_update_delay)
+        print('---------------------------------------------')
 
         try:
             netcdf_file = sat_d.download_br_netcdf(
                 date=str(max_update_delay),
-                date_end=None,
                 data_dir=DATA_DIR,
-                uid=UID,
-                key=KEY,
+                uid=str(UID),
+                key=str(KEY)
             )
+            print('---------------------------------------------')
+            print(netcdf_file)
+            print('---------------------------------------------')
             filepath = Path(DATA_DIR) / netcdf_file
             return filepath
         except Exception as e:
