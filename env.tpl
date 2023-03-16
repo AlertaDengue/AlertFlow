@@ -2,8 +2,8 @@
 AIRFLOW_PROJ_HOST_DIR="{{ pwd }}/alertflow"
 AIRFLOW_VOLUMES_HOST_DIR="{{ pwd }}/volumes"
 AIRFLOW_IMAGE_NAME=apache/airflow:2.5.1
-AIRFLOW_UID="{{ id -u }}"
-AIRFLOW_GID="{{ id -g }}"
+HOST_UID="{{ id -u }}"
+HOST_GID="{{ id -g }}"
 
 # Web
 _AIRFLOW_WWW_USER_USERNAME=
@@ -20,8 +20,8 @@ PSQL_HOST_MAIN=
 PSQL_PORT_MAIN=
 PSQL_DB_MAIN=
 
-# Satellite Weather
-CDSAPI_UID=
+# Satellite Weather (format: CDSAPI_KEY="UID:KEY")
+# https://cds.climate.copernicus.eu/user/{MY_USER}
 CDSAPI_KEY=
 
 # Extras

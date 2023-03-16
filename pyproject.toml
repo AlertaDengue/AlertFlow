@@ -10,10 +10,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">= 3.10, <4"
 containers-sugar = "1.4.1"
-mypy = "^1.0.1"
-satellite-weather-downloader = ">=1.6.1"
-xarray = "^2023.2.0"
-asyncpg = "^0.27.0"
+satellite-weather-downloader = ">=1.7.0"
 
 
 [tool.poetry.group.pre-commit.dependencies]

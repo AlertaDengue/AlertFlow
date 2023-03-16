@@ -2,6 +2,12 @@
 
 set -e
 
+# Set the UID and GID to the current user
+export HOST_UID=$(id -u)
+export HOST_GID=$(id -g)
+
+chown -R ${HOST_UID}:${HOST_GID} $(pwd)
+
 # prepare the conda environment
 is_conda_in_path=$(echo $PATH|grep -m 1 --count /opt/conda/)
 
@@ -9,6 +15,8 @@ if [ $is_conda_in_path == 0 ]; then
   export PATH="/opt/conda/condabin:/opt/conda/bin:$PATH"
   echo "[INFO] included conda to the PATH"
 fi
+
+sleep 3
 
 echo "[INFO] activate alertadengue"
 source activate alertadengue

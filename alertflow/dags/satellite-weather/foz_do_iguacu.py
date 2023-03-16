@@ -1,145 +1,138 @@
-# import asyncio
-# import os
-# from datetime import datetime, timedelta
-# from pathlib import Path, PosixPath
+import os
+import pendulum
+import calendar
 
-# import asyncpg
-# import pandas as pd
-# import pendulum
-# import satellite_downloader as sat_d
-# import satellite_weather as sat_w
+from dateutil import parser
+from pathlib import Path, PosixPath
+from sqlalchemy import create_engine
+from datetime import timedelta, datetime
 
-# from airflow import DAG
-# from airflow.decorators import dag, task
-# from airflow.operators.empty import EmptyOperator
-# from airflow.operators.python import BranchPythonOperator
+from satellite import weather as sat_w
+from satellite import downloader as sat_d
 
+from airflow import DAG
+from airflow.decorators.python import python_task
+from airflow.operators.python import PythonOperator
 
-# env = os.getenv
-# email_main = env('EMAIL_MAIN')
-# DATA_DIR = '/tmp/copernicus'
-# DEFAULT_ARGS = {
-#     'owner': 'AlertaDengue',
-#     'depends_on_past': False,
-#     'email': [email_main],
-#     'email_on_failure': True,
-#     'email_on_retry': False,
-#     'retries': 2,
-#     'retry_delay': timedelta(minutes=2),
-#     'catchup': True,
-# }
+env = os.getenv
+email_main = env('EMAIL_MAIN')
+DATA_DIR = '/tmp/copernicus/foz'
+DEFAULT_ARGS = {
+    'owner': 'AlertaDengue',
+    'depends_on_past': False,
+    # 'email': [email_main],
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'retries': 2,
+    'retry_delay': timedelta(minutes=2),
+}
 
-# PG_URI_MAIN = (
-#     'postgresql://'
-#     f"{env('PSQL_USER_MAIN')}"
-#     f":{env('PSQL_PASSWORD_MAIN')}"
-#     f"@{env('PSQL_HOST_MAIN')}"
-#     f":{env('PSQL_PORT_MAIN')}"
-#     f"/{env('PSQL_DB_MAIN')}"
-# )
-
-
-# @dag(
-#     dag_id='COPERNICUS_FOZ_DO_IGACU',
-#     description='ETL of weather data for Foz do Iguaçu - BR',
-#     tags=['Brasil', 'Copernicus'],
-#     schedule_interval='@weekly',
-#     start_date=pendulum.datetime(2000, 1, 1),
-#     default_args=DEFAULT_ARGS,
-# )
-# def foz_do_iguacu():
-
-#     ## Tasks
-#     @task(task_id='start')
-#     def initial_task():
-#         exec_date = '{{ ds }}'
-#         Path(DATA_DIR).mkdir(exist_ok=True)
-#         return datetime.date(exec_date)
+PG_URI_MAIN = (
+    'postgresql://'
+    f"{env('PSQL_USER_MAIN')}"
+    f":{env('PSQL_PASSWORD_MAIN')}"
+    f"@{env('PSQL_HOST_MAIN')}"
+    f":{env('PSQL_PORT_MAIN')}"
+    f"/{env('PSQL_DB_MAIN')}"
+)
+TABLE_NAME = 'copernicus_foz_do_iguacu'
+SCHEMA = 'weather'
 
 
-#     def _is_date_available(date: datetime.date) -> bool:
-#         max_data_delay = datetime.date(datetime.now() - timedelta(days=7))
-#         return 'yes' if date < max_data_delay else 'no'
+with DAG(
+    dag_id='COPERNICUS_FOZ_DO_IGUACU',
+    description='ETL of weather data for Foz do Iguaçu',
+    tags=['Brasil', 'Copernicus', 'Foz do Iguaçu'],
+    schedule='@monthly',
+    default_args=DEFAULT_ARGS,
+    start_date=pendulum.datetime(2000, 2, 15),
+    catchup=True,
+):
 
+    def download_netcdf(ini_date: str) -> PosixPath:
+        """ 
+        Downloads the file for current task execution 
+        date - 1 month, extracting always the last month of
+        a given execution date. Returns the local NetCDF4 
+        file to be inserted into postgres. 
+        """
+        start_date = parser.parse(str(ini_date))
+        if start_date.month == 1: #If January
+            last_month = datetime(
+                year=start_date.year - 1,
+                month=12,
+                day=start_date.day
+            )
+        else:
+            last_month = datetime(
+                year=start_date.year,
+                month=start_date.month - 1,
+                day=start_date.day
+            )
 
-#     check_date = BranchPythonOperator(
-#         task_id='is_date_available',
-#         python_callable=_is_date_available,
-#         op_kwargs={'date': '{{ ds }}'},
-#     )
+        ini_date = datetime(
+            year=last_month.year,
+            month=last_month.month,
+            day=1
+        ).date()
 
-#     proceed = EmptyOperator(task_id='yes')
+        _, last_month_day = calendar.monthrange(
+            year=last_month.year,
+            month=last_month.month
+        )
 
-#     stop = EmptyOperator(task_id='no')
+        end_date = datetime(
+            year=last_month.year,
+            month=last_month.month,
+            day=last_month_day
+        ).date()
 
+        try:
+            netcdf_file = sat_d.download_br_netcdf(
+                date=str(ini_date),
+                date_end=str(end_date),
+                data_dir=DATA_DIR
+            )
+            filepath = Path(DATA_DIR) / netcdf_file
+            return str(filepath.absolute())
+        except Exception as e:
+            raise e
 
-#     @task(task_id='extract')
-#     def download_netcdf(
-#         data_days_interval: int = None, data_dir=DATA_DIR, **kwargs
-#     ) -> PosixPath:
-#         ti = kwargs['ti']
-#         ini_date = ti.xcom_pull(task_ids='start')
+    # https://airflow.apache.org/docs/apache-airflow/stable/templates-ref.html#variables
+    E = PythonOperator(
+        task_id='extract',
+        python_callable=download_netcdf,
+        op_kwargs={'ini_date': '{{ ds }}'},
+    )
 
-#         if not data_days_interval:
-#             end_date = None
-#         else:
-#             end_date = datetime.date(ini_date - timedelta(days=data_days_interval))
+    @python_task(task_id='loading')
+    def upload_dataset(**context) -> PosixPath:
+        """ 
+        Reads the NetCDF file and generate the dataframe for all 
+        geocodes from IBGE using XArray and insert every geocode
+        into postgres database.
+        """
+        ti = context['ti']
+        file = ti.xcom_pull(task_ids='extract')
+        ds = sat_w.load_dataset(file)
+        df = ds.copebr.to_dataframe(geocodes=4108304, raw=True)
+        with create_engine(PG_URI_MAIN).connect() as conn:
+            df.to_sql(
+                name=TABLE_NAME,
+                schema=SCHEMA,
+                con=conn,
+            )
 
-#         try:
-#             netcdf_file = sat_d.download_br_netcdf(
-#                 date=ini_date, end_date=end_date, data_dir=data_dir
-#             )
-#             return Path(data_dir) / netcdf_file
-#         except Exception as e:
-#             raise e
+    @python_task(task_id='clean')
+    def remove_netcdf(**context):
+        """ Remove the file downloaded by extract task """
+        ti = context['ti']
+        file = ti.xcom_pull(task_ids='extract')
+        Path(file).unlink(missing_ok=False)
 
+    # Creating the tasks
+    TL = upload_dataset()
+    clean = remove_netcdf()
 
-#     async def _to_sql(dataframe: pd.DataFrame, tablename: str, timeout=None):
-#         connection = await asyncpg.connect(dsn=PG_URI_MAIN)
-#         insert = await connection.copy_records_to_table(
-#             tablename,
-#             records=dataframe.values.tolist(),
-#             columns=dataframe.columns,
-#             schema_name='weather',
-#             timeout=timeout,
-#         )
-#         await connection.close()
-#         return insert
-
-
-#     @task(task_id='clean')
-#     def delete_netcdf(**kwargs):
-#         ti = kwargs['ti']
-#         netcdf_file = ti.xcom_pull(task_ids='extract')
-#         Path(netcdf_file).unlink(missing_ok=False)
-
-
-#     done = EmptyOperator(
-#         task_id='done',
-#         trigger_rule='one_success',
-#     )
-
-#     async def _load_and_insert(file):
-#         dataset = sat_w.load_dataset(file)
-#         df = dataset.copebr.to_dataframe(4108304, raw=True)
-#         insert = await _to_sql(df, 'copernicus_foz_do_iguacu')
-#         return insert
-
-#     @task(task_id='loading')
-#     def loading(**kwargs):
-#         ti = kwargs['ti']
-#         netcdf_file = ti.xcom_pull(task_ids='extract')
-#         loop = asyncio.get_event_loop()
-#         res = loop.run_until_complete(_load_and_insert(netcdf_file))
-#         return res
-
-#     start = initial_task()
-#     E = download_netcdf(data_days_interval=7)
-#     L = loading()
-#     clean = delete_netcdf()
-
-#     start >> check_date
-#     check_date >> stop >> done
-#     check_date >> proceed >> E >> L >> clean >> done
-
-# dag = foz_do_iguacu()
+    # Task flow
+    E >> TL >> clean
