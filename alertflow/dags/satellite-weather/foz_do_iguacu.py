@@ -107,9 +107,7 @@ with DAG(
         df = ds.copebr.to_dataframe(geocodes=4108304, raw=True)
         with create_engine(PG_URI_MAIN).connect() as conn:
             df.to_sql(
-                name=TABLE_NAME,
-                schema=SCHEMA,
-                con=conn,
+                name=TABLE_NAME, schema=SCHEMA, con=conn, if_exists='append'
             )
 
     @python_task(task_id='clean')
