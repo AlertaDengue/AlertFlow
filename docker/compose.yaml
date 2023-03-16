@@ -12,6 +12,7 @@ x-airflow-common:
     _AIRFLOW_DB_UPGRADE: 'true'
     _AIRFLOW_WWW_USER_CREATE: 'true'
   volumes:
+    &airflow-common-volumes
     - ${AIRFLOW_PROJ_DIR:-.}:/opt/alertflow
   depends_on:
     &airflow-common-depends-on
