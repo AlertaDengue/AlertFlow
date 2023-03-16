@@ -56,11 +56,6 @@ RUN addgroup --gid ${HOST_GID} airflow \
     /opt/alertflow/dags \
     /opt/alertflow/logs \
     /opt/alertflow/plugins \
-  && addgroup --gid ${HOST_GID} airflow \
-  && useradd --uid ${HOST_UID} --gid ${HOST_GID} -ms /bin/bash airflow \
-  && echo "airflow ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/airflow \
-  && chmod 0440 /etc/sudoers.d/airflow \
-  && export ENV_NAME="$ENV_NAME" \
   && chmod -R a+rwx /opt/conda /opt/alertflow /tmp \
   && chown -R ${HOST_GID}:${HOST_GID} /opt/alertflow/ /tmp \
   && echo 'source activate "$ENV_NAME"' >  /home/airflow/.bashrc
