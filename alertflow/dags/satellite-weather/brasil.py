@@ -92,6 +92,7 @@ with DAG(
                     name=TABLE_NAME,
                     schema=SCHEMA,
                     con=conn,
+                    if_exists='append'
                 )
 
     @python_task(task_id='clean')
