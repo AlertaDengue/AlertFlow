@@ -1,18 +1,16 @@
-import os
-import pendulum
 import calendar
-
-from dateutil import parser
+import os
+from datetime import datetime, timedelta
 from pathlib import Path, PosixPath
-from sqlalchemy import create_engine
-from datetime import timedelta, datetime
 
-from satellite import weather as sat_w
-from satellite import downloader as sat_d
-
+import pendulum
 from airflow import DAG
 from airflow.decorators.python import python_task
 from airflow.operators.python import PythonOperator
+from dateutil import parser
+from satellite import downloader as sat_d
+from satellite import weather as sat_w
+from sqlalchemy import create_engine
 
 env = os.getenv
 email_main = env('EMAIL_MAIN')
@@ -50,48 +48,39 @@ with DAG(
 ):
 
     def download_netcdf(ini_date: str) -> PosixPath:
-        """ 
-        Downloads the file for current task execution 
+        """
+        Downloads the file for current task execution
         date - 1 month, extracting always the last month of
-        a given execution date. Returns the local NetCDF4 
-        file to be inserted into postgres. 
+        a given execution date. Returns the local NetCDF4
+        file to be inserted into postgres.
         """
         start_date = parser.parse(str(ini_date))
-        if start_date.month == 1: #If January
+        if start_date.month == 1:   # If January
             last_month = datetime(
-                year=start_date.year - 1,
-                month=12,
-                day=start_date.day
+                year=start_date.year - 1, month=12, day=start_date.day
             )
         else:
             last_month = datetime(
                 year=start_date.year,
                 month=start_date.month - 1,
-                day=start_date.day
+                day=start_date.day,
             )
 
         ini_date = datetime(
-            year=last_month.year,
-            month=last_month.month,
-            day=1
+            year=last_month.year, month=last_month.month, day=1
         ).date()
 
         _, last_month_day = calendar.monthrange(
-            year=last_month.year,
-            month=last_month.month
+            year=last_month.year, month=last_month.month
         )
 
         end_date = datetime(
-            year=last_month.year,
-            month=last_month.month,
-            day=last_month_day
+            year=last_month.year, month=last_month.month, day=last_month_day
         ).date()
 
         try:
             netcdf_file = sat_d.download_br_netcdf(
-                date=str(ini_date),
-                date_end=str(end_date),
-                data_dir=DATA_DIR
+                date=str(ini_date), date_end=str(end_date), data_dir=DATA_DIR
             )
             filepath = Path(DATA_DIR) / netcdf_file
             return str(filepath.absolute())
@@ -107,8 +96,8 @@ with DAG(
 
     @python_task(task_id='loading')
     def upload_dataset(**context) -> PosixPath:
-        """ 
-        Reads the NetCDF file and generate the dataframe for all 
+        """
+        Reads the NetCDF file and generate the dataframe for all
         geocodes from IBGE using XArray and insert every geocode
         into postgres database.
         """
@@ -125,7 +114,7 @@ with DAG(
 
     @python_task(task_id='clean')
     def remove_netcdf(**context):
-        """ Remove the file downloaded by extract task """
+        """Remove the file downloaded by extract task"""
         ti = context['ti']
         file = ti.xcom_pull(task_ids='extract')
         Path(file).unlink(missing_ok=False)

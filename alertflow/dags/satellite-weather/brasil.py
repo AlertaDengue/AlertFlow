@@ -1,18 +1,16 @@
 import os
-import pendulum
-
-from dateutil import parser
-from pathlib import Path, PosixPath
-from sqlalchemy import create_engine
 from datetime import timedelta
+from pathlib import Path, PosixPath
 
-from satellite import weather as sat_w
-from satellite import downloader as sat_d
-from satellite.weather._brazil.extract_latlons import MUNICIPIOS
-
+import pendulum
 from airflow import DAG
 from airflow.decorators.python import python_task
 from airflow.operators.python import PythonOperator
+from dateutil import parser
+from satellite import downloader as sat_d
+from satellite import weather as sat_w
+from satellite.weather._brazil.extract_latlons import MUNICIPIOS
+from sqlalchemy import create_engine
 
 env = os.getenv
 email_main = env('EMAIL_MAIN')
@@ -51,16 +49,18 @@ with DAG(
 ):
 
     def download_netcdf(ini_date: str) -> PosixPath:
-        """ 
-        Downloads the file for current task execution 
+        """
+        Downloads the file for current task execution
         date - 9 days for safety reasons. Returns the
-        local NetCDF4 file to be inserted into postgres. 
+        local NetCDF4 file to be inserted into postgres.
         """
         start_date = parser.parse(str(ini_date)).date()
         max_update_delay = start_date - timedelta(days=9)
 
         try:
-            netcdf_file = sat_d.download_br_netcdf(date=str(max_update_delay),data_dir=DATA_DIR)
+            netcdf_file = sat_d.download_br_netcdf(
+                date=str(max_update_delay), data_dir=DATA_DIR
+            )
             filepath = Path(DATA_DIR) / netcdf_file
             return str(filepath.absolute())
         except Exception as e:
@@ -75,8 +75,8 @@ with DAG(
 
     @python_task(task_id='loading')
     def upload_dataset(**context) -> PosixPath:
-        """ 
-        Reads the NetCDF file and generate the dataframe for all 
+        """
+        Reads the NetCDF file and generate the dataframe for all
         geocodes from IBGE using XArray and insert every geocode
         into postgres database.
         """
@@ -84,7 +84,7 @@ with DAG(
         file = ti.xcom_pull(task_ids='extract')
         ds = sat_w.load_dataset(file)
         geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
-        
+
         for geocode in geocodes:
             df = ds.copebr.to_dataframe(geocodes=geocode, raw=False)
             with create_engine(PG_URI_MAIN).connect() as conn:
@@ -92,12 +92,12 @@ with DAG(
                     name=TABLE_NAME,
                     schema=SCHEMA,
                     con=conn,
-                    if_exists='append'
+                    if_exists='append',
                 )
 
     @python_task(task_id='clean')
     def remove_netcdf(**context):
-        """ Remove the file downloaded by extract task """
+        """Remove the file downloaded by extract task"""
         ti = context['ti']
         file = ti.xcom_pull(task_ids='extract')
         Path(file).unlink(missing_ok=False)
