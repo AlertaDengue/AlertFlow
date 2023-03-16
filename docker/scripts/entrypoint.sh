@@ -2,6 +2,12 @@
 
 set -e
 
+# Set the UID and GID to the current user
+export HOST_UID=$(id -u)
+export HOST_GID=$(id -g)
+
+chown -R ${HOST_UID}:${HOST_GID} $(pwd)
+
 # prepare the conda environment
 is_conda_in_path=$(echo $PATH|grep -m 1 --count /opt/conda/)
 
@@ -16,6 +22,8 @@ source activate alertflow
 # Give permissions to alertflow user to access working directory sources
 mkdir -p /opt/alertflow/logs /opt/alertflow/dags /opt/alertflow/plugins
 chown -R "${HOST_UID}:${HOST_GID}" /opt/alertflow/{logs,dags,plugins}
+
+sleep 3
 
 airflow version
 airflow db init

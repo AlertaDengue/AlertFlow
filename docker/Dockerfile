@@ -5,6 +5,10 @@ ARG HOST_GID
 ENV ENV_NAME=alertflow
 
 USER root
+ARG HOST_UID=1000
+ARG HOST_GID=1000
+
+ENV ENV_NAME=alertadengue
 
 SHELL ["/bin/bash", "-c"]
 # Use bash in Dockerfile RUN commands and make sure bashrc is sourced when
@@ -49,6 +53,14 @@ RUN addgroup --gid ${HOST_GID} airflow \
   && mkdir -p \
     /opt/conda \
     /opt/alertflow/ \
+    /opt/alertflow/dags \
+    /opt/alertflow/logs \
+    /opt/alertflow/plugins \
+  && addgroup --gid ${HOST_GID} airflow \
+  && useradd --uid ${HOST_UID} --gid ${HOST_GID} -ms /bin/bash airflow \
+  && echo "airflow ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/airflow \
+  && chmod 0440 /etc/sudoers.d/airflow \
+  && export ENV_NAME="$ENV_NAME" \
   && chmod -R a+rwx /opt/conda /opt/alertflow /tmp \
   && chown -R ${HOST_GID}:${HOST_GID} /opt/alertflow/ /tmp \
   && echo 'source activate "$ENV_NAME"' >  /home/airflow/.bashrc
@@ -60,7 +72,6 @@ USER airflow
 
 # Change shell to bash
 SHELL ["/bin/bash", "-c"]
-WORKDIR /opt/alertflow
 
 COPY --chown=${HOST_GID}:${HOST_GID} conda/env-base.yaml /tmp/conda/env-base.yaml
 COPY --chown=${HOST_GID}:${HOST_GID} poetry.lock pyproject.toml airflow.cfg /opt/alertflow/
@@ -78,6 +89,6 @@ RUN mamba env create -n $ENV_NAME -f /tmp/conda/env-base.yaml \
 
 RUN pip install --root-user-action ignore -r /tmp/airflow-extras.in
 
+WORKDIR /opt/alertflow
 RUN bash /tmp/poetry-install.sh
-
 ENTRYPOINT ["bash", "/entrypoint.sh"]

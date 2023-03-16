@@ -14,12 +14,11 @@ env:
 
   _AIRFLOW_WWW_USER_USERNAME: ci
   _AIRFLOW_WWW_USER_PASSWORD: ci
-
-  PSQL_USER: ${{ secrets.CI_PSQL_USER }}
-  PSQL_PASSWORD: ${{ secrets.CI_PSQL_PASSWORD }}
-  PSQL_HOST: ${{ secrets.CI_PSQL_HOST }}
-  PSQL_PORT: ${{ secrets.CI_PSQL_PORT }}
-  PSQL_DB: ${{ secrets.CI_PSQL_DB }}
+  PSQL_USER_MAIN: ${{ secrets.CI_PSQL_USER }}
+  PSQL_PASSWORD_MAIN: ${{ secrets.CI_PSQL_PASSWORD }}
+  PSQL_HOST_MAIN: ${{ secrets.CI_PSQL_HOST }}
+  PSQL_PORT_MAIN: ${{ secrets.CI_PSQL_PORT }}
+  PSQL_DB_MAIN: ${{ secrets.CI_PSQL_DB }}
 
 jobs:
   main:
