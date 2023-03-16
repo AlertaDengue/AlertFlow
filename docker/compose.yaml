@@ -7,19 +7,12 @@ x-airflow-common:
     &airflow-common-env
     AIRFLOW_PROJ_HOST_DIR: ${AIRFLOW_PROJ_HOST_DIR}
     AIRFLOW_HOME: /opt/alertflow
-    AIRFLOW_UID: ${AIRFLOW_UID}
-    AIRFLOW_GID: ${AIRFLOW_GID}
     _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
     _AIRFLOW_DB_UPGRADE: 'true'
     _AIRFLOW_WWW_USER_CREATE: 'true'
-    AIRFLOW_CONN_POSTGRES_MAIN: ${AIRFLOW_CONN_POSTGRES_MAIN}
   volumes:
-    &airflow-common-volumes
-    - ${AIRFLOW_PROJ_HOST_DIR}/dags:/opt/alertflow/dags
-    - ${AIRFLOW_PROJ_HOST_DIR}/logs:/opt/alertflow/logs
-    - ${AIRFLOW_PROJ_HOST_DIR}/plugins:/opt/alertflow/plugins
-  user: "${AIRFLOW_UID}:${AIRFLOW_GID}"
+    - ${AIRFLOW_PROJ_DIR:-.}:/opt/alertflow
   depends_on:
     &airflow-common-depends-on
     core_redis:

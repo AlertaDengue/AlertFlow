@@ -9,7 +9,7 @@ on:
 env:
   AIRFLOW_PROJ_HOST_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
   AIRFLOW_IMAGE_NAME: apache/airflow:2.5.1
-  AIRFLOW_UID: 1001
+  HOST_UID: 1001
 
   _AIRFLOW_WWW_USER_USERNAME: ci
   _AIRFLOW_WWW_USER_PASSWORD: ci
@@ -19,7 +19,6 @@ env:
   PSQL_HOST: ${{ secrets.CI_PSQL_HOST }}
   PSQL_PORT: ${{ secrets.CI_PSQL_PORT }}
   PSQL_DB: ${{ secrets.CI_PSQL_DB }}
-  AIRFLOW_CONN_POSTGRES_MAIN: postgresql://$PSQL_USER:$PSQL_PASSWORD@$PSQL_HOST:$PSQL_PORT/$PSQL_DB
 
 jobs:
   main:
