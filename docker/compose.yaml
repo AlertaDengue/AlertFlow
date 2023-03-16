@@ -2,24 +2,32 @@ version: '3'
 
 x-airflow-common:
   &airflow-common
+  env_file: ../.env
   image: alertflow_base
+  build:
+    context: '..'
+    dockerfile: 'docker/Dockerfile'
+    args:
+      HOST_UID: ${HOST_UID}
+      HOST_GID: ${HOST_GID}
   environment:
     &airflow-common-env
+    TZ: America/Sao_Paulo
     AIRFLOW_PROJ_HOST_DIR: ${AIRFLOW_PROJ_HOST_DIR}
     AIRFLOW_HOME: /opt/alertflow
-    AIRFLOW_UID: ${AIRFLOW_UID}
-    AIRFLOW_GID: ${AIRFLOW_GID}
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Sao_Paulo
     _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
     _AIRFLOW_DB_UPGRADE: 'true'
     _AIRFLOW_WWW_USER_CREATE: 'true'
-    AIRFLOW_CONN_POSTGRES_MAIN: ${AIRFLOW_CONN_POSTGRES_MAIN}
+  user: ${HOST_UID}:${HOST_GID}
   volumes:
     &airflow-common-volumes
     - ${AIRFLOW_PROJ_HOST_DIR}/dags:/opt/alertflow/dags
     - ${AIRFLOW_PROJ_HOST_DIR}/logs:/opt/alertflow/logs
     - ${AIRFLOW_PROJ_HOST_DIR}/plugins:/opt/alertflow/plugins
-  user: "${AIRFLOW_UID}:${AIRFLOW_GID}"
+    - /etc/timezone:/etc/timezone:ro
+    - /etc/localtime:/etc/localtime:ro
   depends_on:
     &airflow-common-depends-on
     core_redis:
@@ -100,7 +108,7 @@ services:
       <<: *airflow-common-depends-on
 
   core_postgres:
-    image: postgres:13
+    image: postgres:14
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
