@@ -50,7 +50,7 @@ RUN addgroup --gid ${HOST_GID} airflow \
     /opt/conda \
     /opt/alertflow/ \
   && chmod -R a+rwx /opt/conda /opt/alertflow /tmp \
-  && chown -R airflow:airflow /opt/alertflow/ /tmp \
+  && chown -R ${HOST_GID}:${HOST_GID} /opt/alertflow/ /tmp \
   && echo 'source activate "$ENV_NAME"' >  /home/airflow/.bashrc
 
 ENV PATH "$PATH:/home/airflow/.local/bin"
@@ -62,14 +62,14 @@ USER airflow
 SHELL ["/bin/bash", "-c"]
 WORKDIR /opt/alertflow
 
-COPY --chown=${HOST_GID}:${HOST_GID} conda/env.yaml /tmp/conda/env.yaml
+COPY --chown=${HOST_GID}:${HOST_GID} conda/env-base.yaml /tmp/conda/env-base.yaml
 COPY --chown=${HOST_GID}:${HOST_GID} poetry.lock pyproject.toml airflow.cfg /opt/alertflow/
 COPY --chown=${HOST_GID}:${HOST_GID} docker/scripts/poetry.sh /tmp/poetry-install.sh
 COPY --chown=${HOST_GID}:${HOST_GID} docker/scripts/entrypoint.sh /entrypoint.sh
 COPY --chown=${HOST_GID}:${HOST_GID} docker/airflow-extras.in /tmp/airflow-extras.in
 
 # Use environment to create the env-satellite
-RUN mamba env create -n $ENV_NAME -f /tmp/conda/env.yaml \
+RUN mamba env create -n $ENV_NAME -f /tmp/conda/env-base.yaml \
   && conda clean --all \
   && find /opt/conda/ -type f,l -name '*.a' -delete \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
