@@ -23,10 +23,10 @@ source activate alertflow
 mkdir -p /opt/alertflow/logs /opt/alertflow/dags /opt/alertflow/plugins
 chown -R "${HOST_UID}:${HOST_GID}" /opt/alertflow/{logs,dags,plugins}
 
-sleep 3
-
 airflow version
 airflow db init
+
+sleep 3
 
 # Creates user if not exists
 users_list=`airflow users list`
