@@ -7,7 +7,7 @@ others.
 
 ## Create & Activate the Virtual Environment
 ``` bash
-$ mamba create -c conda-forge --file conda/env.yaml
+$ mamba create -c conda-forge --file conda/env-base.yaml
 $ conda activate alertflow
 ```
 

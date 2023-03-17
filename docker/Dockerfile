@@ -1,5 +1,9 @@
 FROM condaforge/mambaforge as base
 
+ARG HOST_UID
+ARG HOST_GID
+ENV ENV_NAME=alertflow
+
 USER root
 ARG HOST_UID=1000
 ARG HOST_GID=1000
@@ -33,26 +37,25 @@ RUN apt-get -qq update --yes \
   lcov \
   valgrind \
   unixodbc-dev \
-  && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p \
-    /opt/conda \
-    /opt/alertflow/ \
-    /opt/alertflow/dags \
-    /opt/alertflow/logs \
-    /opt/alertflow/plugins \
-  && addgroup --gid ${HOST_GID} airflow \
-  && useradd --uid ${HOST_UID} --gid ${HOST_GID} -ms /bin/bash airflow \
-  && echo "airflow ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/airflow \
-  && chmod 0440 /etc/sudoers.d/airflow \
-  && export ENV_NAME="$ENV_NAME" \
-  && chmod -R a+rwx /opt/conda /opt/alertflow /tmp \
-  && chown -R airflow:airflow /opt/alertflow/ /tmp \
-  && echo 'source activate "$ENV_NAME"' >  /home/airflow/.bashrc
+  && rm -rf /var/lib/apt/lists/*
 
 #Set locale
 RUN sed -i -e "s/# pt_BR.*/pt_BR.UTF-8 UTF-8/" /etc/locale.gen \
     && dpkg-reconfigure --frontend=noninteractive locales \
-    && update-locale LANG=pt_BR.UTF-8 
+    && update-locale LANG=pt_BR.UTF-8
+
+# Create airflow user
+RUN addgroup --gid ${HOST_GID} airflow \
+  && useradd --uid ${HOST_UID} --gid ${HOST_GID} -ms /bin/bash airflow \
+  && echo "airflow ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/airflow \
+  && chmod 0440 /etc/sudoers.d/airflow \
+  && export ENV_NAME="$ENV_NAME" \
+  && mkdir -p \
+    /opt/conda \
+    /opt/alertflow/ \
+  && chmod -R a+rwx /opt/conda /opt/alertflow /tmp \
+  && chown -R ${HOST_GID}:${HOST_GID} /opt/alertflow/ \
+  && echo 'source activate "$ENV_NAME"' >  /home/airflow/.bashrc
 
 ENV PATH "$PATH:/home/airflow/.local/bin"
 ENV PATH /opt/conda/envs/$ENV_NAME/bin:$PATH
@@ -62,19 +65,20 @@ USER airflow
 # Change shell to bash
 SHELL ["/bin/bash", "-c"]
 
-# Copy files into image
-COPY --chown=airflow:airflow conda/env.yaml /tmp/conda/env.yaml
-COPY --chown=airflow:airflow docker/airflow-extras.in /tmp/airflow-extras.in
-COPY --chown=airflow:airflow poetry.lock pyproject.toml airflow.cfg /opt/alertflow/
-COPY --chown=airflow:airflow docker/scripts/poetry.sh /tmp/poetry-install.sh
-COPY --chown=airflow:airflow docker/scripts/entrypoint.sh /entrypoint.sh
+COPY --chown=${HOST_GID}:${HOST_GID} conda/env-base.yaml /tmp/conda/env-base.yaml
+COPY --chown=${HOST_GID}:${HOST_GID} poetry.lock pyproject.toml airflow.cfg /opt/alertflow/
+COPY --chown=${HOST_GID}:${HOST_GID} docker/scripts/poetry.sh /tmp/poetry-install.sh
+COPY --chown=${HOST_GID}:${HOST_GID} docker/scripts/entrypoint.sh /entrypoint.sh
+COPY --chown=${HOST_GID}:${HOST_GID} docker/airflow-extras.in /tmp/airflow-extras.in
 
 # Use environment to create the env-satellite
-RUN mamba env create -n $ENV_NAME -f /tmp/conda/env.yaml \
+RUN mamba env create -n $ENV_NAME -f /tmp/conda/env-base.yaml \
   && conda clean --all \
   && find /opt/conda/ -type f,l -name '*.a' -delete \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
-  && find /opt/conda/ -type f,l -name '*.js.map' -delete
+  && find /opt/conda/ -type f,l -name '*.js.map' -delete \
+  && rm -rf /home/airflow/.conda/pkgs
+
 RUN pip install --root-user-action ignore -r /tmp/airflow-extras.in
 
 WORKDIR /opt/alertflow

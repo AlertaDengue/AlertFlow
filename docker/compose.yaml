@@ -20,14 +20,9 @@ x-airflow-common:
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
     _AIRFLOW_DB_UPGRADE: 'true'
     _AIRFLOW_WWW_USER_CREATE: 'true'
-  user: ${HOST_UID}:${HOST_GID}
   volumes:
     &airflow-common-volumes
-    - ${AIRFLOW_PROJ_HOST_DIR}/dags:/opt/alertflow/dags
-    - ${AIRFLOW_PROJ_HOST_DIR}/logs:/opt/alertflow/logs
-    - ${AIRFLOW_PROJ_HOST_DIR}/plugins:/opt/alertflow/plugins
-    - /etc/timezone:/etc/timezone:ro
-    - /etc/localtime:/etc/localtime:ro
+    - ${AIRFLOW_PROJ_DIR:-.}:/opt/alertflow
   depends_on:
     &airflow-common-depends-on
     core_redis:

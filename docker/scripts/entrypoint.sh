@@ -16,13 +16,17 @@ if [ $is_conda_in_path == 0 ]; then
   echo "[INFO] included conda to the PATH"
 fi
 
-sleep 3
+echo "[INFO] activate alertflow"
+source activate alertflow
 
-echo "[INFO] activate alertadengue"
-source activate alertadengue
+# Give permissions to alertflow user to access working directory sources
+mkdir -p /opt/alertflow/logs /opt/alertflow/dags /opt/alertflow/plugins
+chown -R "${HOST_UID}:${HOST_GID}" /opt/alertflow/{logs,dags,plugins}
 
 airflow version
 airflow db init
+
+sleep 3
 
 # Creates user if not exists
 users_list=`airflow users list`
