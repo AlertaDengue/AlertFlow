@@ -53,11 +53,8 @@ RUN addgroup --gid ${HOST_GID} airflow \
   && mkdir -p \
     /opt/conda \
     /opt/alertflow/ \
-    /opt/alertflow/dags \
-    /opt/alertflow/logs \
-    /opt/alertflow/plugins \
   && chmod -R a+rwx /opt/conda /opt/alertflow /tmp \
-  && chown -R ${HOST_GID}:${HOST_GID} /opt/alertflow/ /tmp \
+  && chown -R ${HOST_GID}:${HOST_GID} /opt/alertflow/ \
   && echo 'source activate "$ENV_NAME"' >  /home/airflow/.bashrc
 
 ENV PATH "$PATH:/home/airflow/.local/bin"
