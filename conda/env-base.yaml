@@ -10,3 +10,4 @@ dependencies:
   - pip
   - pip:
     - containers-sugar ==1.4.2
+    - -r file:airflow-extras.in

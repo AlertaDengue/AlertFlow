@@ -1,0 +1,67 @@
+version: '3.4'
+
+services:
+  airflow:
+    platform: linux/amd64
+    hostname: airflow
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    build:
+      context: ..
+      dockerfile: containers/airflow/Dockerfile
+      args:
+        # note: if you want to use a specific UID and GID, ensure to add it to
+        #       the .env file
+        - UID=${HOST_UID:-1000}
+        - GID=${HOST_GID:-1000}
+    environment:
+      TZ: America/Sao_Paulo
+      AIRFLOW_HOME: /opt/services/alertflow
+      AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Sao_Paulo
+    user: "airflow:airflow"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 40s  # requires docker-compose 3.4
+    volumes:
+      - ${VOLUMES_HOST_DIR}/airflow/dags:/opt/airflow/dags
+      - ${VOLUMES_HOST_DIR}/airflow/logs:/opt/airflow/logs
+      - ${VOLUMES_HOST_DIR}/airflow/plugins:/opt/airflow/plugins
+    ports:
+      - ${AIRFLOW_PORT}:8080
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  redis:
+    image: redis:latest
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    restart: always
+
+volumes:
+  postgres-db-volume:

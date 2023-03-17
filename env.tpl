@@ -1,11 +1,11 @@
 # Core
-AIRFLOW_PROJ_HOST_DIR="{{ pwd }}/alertflow"
-AIRFLOW_VOLUMES_HOST_DIR="{{ pwd }}/volumes"
+VOLUMES_HOST_DIR="{{ pwd }}/volumes"
 AIRFLOW_IMAGE_NAME=apache/airflow:2.5.1
 HOST_UID="{{ id -u }}"
 HOST_GID="{{ id -g }}"
 
 # Web
+AIRFLOW_PORT=
 _AIRFLOW_WWW_USER_USERNAME=
 _AIRFLOW_WWW_USER_PASSWORD=
 

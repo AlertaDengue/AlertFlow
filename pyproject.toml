@@ -5,7 +5,7 @@ description = "Airflow for AlertaDengue"
 authors = ["Luã Bida Vacaro <luabidaa@gmail.com>"]
 license = "GNU"
 readme = "README.md"
-packages = [{include='alertflow'}]
+
 
 [tool.poetry.dependencies]
 python = ">= 3.10, <4"

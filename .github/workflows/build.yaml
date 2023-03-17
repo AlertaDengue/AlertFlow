@@ -7,7 +7,6 @@ on:
     branches: [ main ]
 
 env:
-  AIRFLOW_PROJ_HOST_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
   AIRFLOW_IMAGE_NAME: apache/airflow:2.5.1
   HOST_UID: 1000
   HOST_GID: 1000

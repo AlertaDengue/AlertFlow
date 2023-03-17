@@ -1,8 +1,6 @@
-import calendar
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path, PosixPath
-
 import pendulum
 from airflow import DAG
 from airflow.decorators.python import python_task
@@ -10,11 +8,12 @@ from airflow.operators.python import PythonOperator
 from dateutil import parser
 from satellite import downloader as sat_d
 from satellite import weather as sat_w
+from satellite.weather._brazil.extract_latlons import MUNICIPIOS
 from sqlalchemy import create_engine
 
 env = os.getenv
 email_main = env('EMAIL_MAIN')
-DATA_DIR = '/tmp/copernicus/foz'
+DATA_DIR = '/tmp/copernicus'
 DEFAULT_ARGS = {
     'owner': 'AlertaDengue',
     'depends_on_past': False,
@@ -25,6 +24,7 @@ DEFAULT_ARGS = {
     'retry_delay': timedelta(minutes=2),
 }
 
+
 PG_URI_MAIN = (
     'postgresql://'
     f"{env('PSQL_USER_MAIN')}"
@@ -33,54 +33,32 @@ PG_URI_MAIN = (
     f":{env('PSQL_PORT_MAIN')}"
     f"/{env('PSQL_DB_MAIN')}"
 )
-TABLE_NAME = 'copernicus_foz_do_iguacu'
+TABLE_NAME = 'copernicus_brasil'
 SCHEMA = 'weather'
 
 
 with DAG(
-    dag_id='COPERNICUS_FOZ_DO_IGUACU',
-    description='ETL of weather data for Foz do Iguaçu',
-    tags=['Brasil', 'Copernicus', 'Foz do Iguaçu'],
-    schedule='@monthly',
+    dag_id='COPERNICUS_BRASIL',
+    description='ETL of weather data for Brazil',
+    tags=['Brasil', 'Copernicus'],
+    schedule='@daily',
     default_args=DEFAULT_ARGS,
-    start_date=pendulum.datetime(2000, 2, 15),
+    start_date=pendulum.datetime(2000, 1, 9),
     catchup=True,
 ):
 
     def download_netcdf(ini_date: str) -> PosixPath:
         """
         Downloads the file for current task execution
-        date - 1 month, extracting always the last month of
-        a given execution date. Returns the local NetCDF4
-        file to be inserted into postgres.
+        date - 9 days for safety reasons. Returns the
+        local NetCDF4 file to be inserted into postgres.
         """
-        start_date = parser.parse(str(ini_date))
-        if start_date.month == 1:   # If January
-            last_month = datetime(
-                year=start_date.year - 1, month=12, day=start_date.day
-            )
-        else:
-            last_month = datetime(
-                year=start_date.year,
-                month=start_date.month - 1,
-                day=start_date.day,
-            )
-
-        ini_date = datetime(
-            year=last_month.year, month=last_month.month, day=1
-        ).date()
-
-        _, last_month_day = calendar.monthrange(
-            year=last_month.year, month=last_month.month
-        )
-
-        end_date = datetime(
-            year=last_month.year, month=last_month.month, day=last_month_day
-        ).date()
+        start_date = parser.parse(str(ini_date)).date()
+        max_update_delay = start_date - timedelta(days=9)
 
         try:
             netcdf_file = sat_d.download_br_netcdf(
-                date=str(ini_date), date_end=str(end_date), data_dir=DATA_DIR
+                date=str(max_update_delay), data_dir=DATA_DIR
             )
             filepath = Path(DATA_DIR) / netcdf_file
             return str(filepath.absolute())
@@ -104,11 +82,17 @@ with DAG(
         ti = context['ti']
         file = ti.xcom_pull(task_ids='extract')
         ds = sat_w.load_dataset(file)
-        df = ds.copebr.to_dataframe(geocodes=4108304, raw=True)
-        with create_engine(PG_URI_MAIN).connect() as conn:
-            df.to_sql(
-                name=TABLE_NAME, schema=SCHEMA, con=conn, if_exists='append'
-            )
+        geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
+
+        for geocode in geocodes:
+            df = ds.copebr.to_dataframe(geocodes=geocode, raw=False)
+            with create_engine(PG_URI_MAIN).connect() as conn:
+                df.to_sql(
+                    name=TABLE_NAME,
+                    schema=SCHEMA,
+                    con=conn,
+                    if_exists='append',
+                )
 
     @python_task(task_id='clean')
     def remove_netcdf(**context):

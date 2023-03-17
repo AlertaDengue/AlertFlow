@@ -9,7 +9,7 @@ include .env
 # -- Docker --
 .PHONY: containers-build
 containers-build:
-	containers-sugar --group base build
+	containers-sugar --group airflow build
 
 .PHONY: containers-start
 containers-start:
