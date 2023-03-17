@@ -20,8 +20,8 @@ echo "[INFO] activate alertflow"
 source activate alertflow
 
 # Give permissions to alertflow user to access working directory sources
-mkdir -p /opt/alertflow/logs /opt/alertflow/dags /opt/alertflow/plugins
-chown -R "${HOST_UID}:${HOST_GID}" /opt/alertflow/{logs,dags,plugins}
+mkdir -p ${AIRFLOW_HOME}/logs ${AIRFLOW_HOME}/dags ${AIRFLOW_HOME}/plugins
+chown -R "${HOST_UID}:${HOST_GID}" ${AIRFLOW_HOME}/{logs,dags,plugins}
 
 airflow version
 airflow db init

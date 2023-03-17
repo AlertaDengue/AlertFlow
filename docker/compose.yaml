@@ -14,7 +14,7 @@ x-airflow-common:
     &airflow-common-env
     TZ: America/Sao_Paulo
     AIRFLOW_PROJ_HOST_DIR: ${AIRFLOW_PROJ_HOST_DIR}
-    AIRFLOW_HOME: /opt/alertflow
+    AIRFLOW_HOME: /opt/services/alertflow
     AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Sao_Paulo
     _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
@@ -22,7 +22,7 @@ x-airflow-common:
     _AIRFLOW_WWW_USER_CREATE: 'true'
   volumes:
     &airflow-common-volumes
-    - ${AIRFLOW_PROJ_DIR:-.}:/opt/alertflow
+    - ${AIRFLOW_PROJ_HOST_DIR:-alertflow}:/opt/services/alertflow
   depends_on:
     &airflow-common-depends-on
     core_redis:

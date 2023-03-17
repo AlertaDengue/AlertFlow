@@ -5,11 +5,10 @@ description = "Airflow for AlertaDengue"
 authors = ["Luã Bida Vacaro <luabidaa@gmail.com>"]
 license = "GNU"
 readme = "README.md"
-
+packages = [{include='alertflow'}]
 
 [tool.poetry.dependencies]
 python = ">= 3.10, <4"
-containers-sugar = "1.4.1"
 satellite-weather-downloader = ">=1.7.0"
 
 
@@ -22,7 +21,6 @@ isort = "^5.12.0"
 
 
 [tool.poetry.group.dev.dependencies]
-docker-compose = "^1.29.2"
 ipython = "^8.11.0"
 
 
