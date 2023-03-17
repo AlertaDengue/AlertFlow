@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alertflow"
-version = "1.0.0"  # changed by semantic-release
+version = "1.1.0"  # changed by semantic-release
 description = "Airflow for AlertaDengue"
 authors = ["Luã Bida Vacaro <luabidaa@gmail.com>"]
 license = "GNU"
