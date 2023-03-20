@@ -45,6 +45,6 @@ if [[ ${warning_resources} == "true" ]]; then
 fi
 mkdir -p /sources/logs /sources/dags /sources/plugins
 
-: "[INFO] Running airflow db init"
 airflow db init &&
 sleep 5
+echo "[INFO] Airflow db init done"

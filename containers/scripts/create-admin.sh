@@ -2,7 +2,6 @@
 
 set -e
 
-: "[INFO] Running airflow users create"
 airflow users create \
   --username "${_AIRFLOW_WWW_USER_USERNAME}" \
   --password "${_AIRFLOW_WWW_USER_PASSWORD}" \
@@ -10,3 +9,4 @@ airflow users create \
   --firstname "${_AIRFLOW_WWW_USER_FIRST_NAME}" \
   --lastname "${_AIRFLOW_WWW_USER_LAST_NAME}" \
   --role Admin
+echo "[INFO] Airflow Admin user created"

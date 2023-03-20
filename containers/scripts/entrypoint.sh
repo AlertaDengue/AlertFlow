@@ -9,14 +9,14 @@ fi
 # prepare the conda environment
 is_conda_in_path=$(echo "$PATH"|grep -m 1 --count /opt/conda/)
 
-if [ $is_conda_in_path == 0 ]; then
+if [ "$is_conda_in_path" == 0 ]; then
   export PATH="/opt/conda/condabin:/opt/conda/bin:$PATH"
-  : "[INFO] included conda to the PATH"
+  echo "[INFO] included conda to the PATH"
 fi
 
-: "[INFO] activate alertflow"
+echo "[INFO] activate alertflow"
 . /opt/conda/etc/profile.d/conda.sh &&
 conda activate alertflow
 
-: "Running: ${@}"
+echo "Running: ${@}"
 $("${@}")

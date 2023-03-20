@@ -2,31 +2,12 @@
 
 set -e
 
-chown -R airflow:airflow "${AIRFLOW_HOME}"/{dags,logs,plugins}
+AH="${AIRFLOW_HOME}"
+chown -R airflow:airflow "$AH"/dags "$AH"/logs "$AH"/plugins
 
-# initdb
-: "[INFO] running init-db.sh"
-. /opt/scripts/init-db.sh &&
-sleep 5
-
-# create admin user
-: "[INFO] running create-admin.sh"
-. /opt/scripts/create-admin.sh &&
-sleep 5
-
-# start airflow
-: "[INFO] running airflow webserver"
-airflow webserver &&
-sleep 5
-
-# start scheduler
-: "[INFO] running airflow scheduler"
-airflow scheduler &&
-sleep 5
-
-# just to keep the prompt blocked
-mkdir -p /tmp/empty
-cd /tmp/empty
-
-: "[INFO] Done"
-# python -m http.server
+echo "[INFO] Running startup scripts"
+bash /opt/scripts/init-db.sh && \
+bash /opt/scripts/create-admin.sh && \
+bash /opt/scripts/scheduler.sh && \
+bash /opt/scripts/webserver.sh
+echo "[INFO] Airflow initialization done"
