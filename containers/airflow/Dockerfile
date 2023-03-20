@@ -43,8 +43,7 @@ RUN apt-get -qq update --yes \
     /opt/conda \
     /opt/services/ \
   && chmod -R a+rwx /opt/conda \
-  && chown -R airflow:airflow /opt/services /opt/conda \
-  && echo 'source activate "$ENV_NAME"' >  /home/airflow/.bashrc
+  && chown -R airflow:airflow /opt/services /opt/conda
 
 #Set locale
 RUN sed -i -e "s/# pt_BR.*/pt_BR.UTF-8 UTF-8/" /etc/locale.gen \
@@ -58,14 +57,15 @@ USER airflow
 
 WORKDIR /opt/services/
 
-ENV AIRFLOW_HOME=/opt/services/airflow
+ENV AIRFLOW_HOME=/opt/services/alertflow
 ENV PATH /opt/conda/envs/$ENV_NAME/bin:$PATH
-ENV PYTHONPATH='/opt/services/airflow'
+ENV PYTHONPATH='/opt/services/alertflow'
 
 # Change shell to bash
 SHELL ["/bin/bash", "-c"]
 
 RUN sudo mkdir -p /opt/scripts /sources ${AIRFLOW_HOME} \
+  && echo ". /entrypoint.sh" >> ~/.bashrc \
   && sudo chown -R airflow:airflow /opt/scripts \
   && sudo chown -R airflow:airflow /sources \
   && sudo chown -R airflow:airflow ${AIRFLOW_HOME}
@@ -84,14 +84,15 @@ RUN sudo ln -fs /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime \
   && sudo chmod -R a+rwx /opt/scripts
 
 # Use environment to create the env-satellite
-RUN conda env create -n $ENV_NAME --file /tmp/conda/env-base.yaml \
+RUN mamba env create -n $ENV_NAME --file /tmp/conda/env-base.yaml \
   && conda clean --all \
-  && find /opt/conda/ -type f,l -name '*.a' -delete \
   && find /opt/conda/ -type f,l -name '*.pyc' -delete \
   && find /opt/conda/ -type f,l -name '*.js.map' -delete \
   && rm -rf /opt/conda/pkgs /tmp/*
 
-RUN bash /opt/scripts/poetry.sh
+SHELL ["/bin/bash", "-c"]
 
-ENTRYPOINT ["bash", "/entrypoint.sh"]
-CMD /opt/scripts/startup.sh
+RUN source /opt/scripts/poetry.sh
+
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+CMD ["/bin/bash" , "/opt/scripts/startup.sh"]

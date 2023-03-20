@@ -13,8 +13,8 @@ services:
       args:
         # note: if you want to use a specific UID and GID, ensure to add it to
         #       the .env file
-        - UID=${HOST_UID:-1000}
-        - GID=${HOST_GID:-1000}
+        - UID=${HOST_UID}
+        - GID=${HOST_GID}
     environment:
       TZ: America/Sao_Paulo
       AIRFLOW_HOME: /opt/services/alertflow
@@ -27,9 +27,9 @@ services:
       retries: 10
       start_period: 40s  # requires docker-compose 3.4
     volumes:
-      - ${VOLUMES_HOST_DIR}/airflow/dags:/opt/airflow/dags
-      - ${VOLUMES_HOST_DIR}/airflow/logs:/opt/airflow/logs
-      - ${VOLUMES_HOST_DIR}/airflow/plugins:/opt/airflow/plugins
+      - ${VOLUMES_HOST_DIR}/airflow/dags:${AIRFLOW_HOME}/dags
+      - ${VOLUMES_HOST_DIR}/airflow/logs:${AIRFLOW_HOME}/logs
+      - ${VOLUMES_HOST_DIR}/airflow/plugins:${AIRFLOW_HOME}/plugins
     ports:
       - ${AIRFLOW_PORT}:8080
     depends_on:

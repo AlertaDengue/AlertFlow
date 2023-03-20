@@ -46,3 +46,16 @@ repos:
         - commit
       types:
         - python
+
+    - id: shellcheck
+      name: shellcheck
+      language: system
+      entry: shellcheck
+      types_or:
+        - sh
+        - shell
+        - ash
+        - bash
+        - bats
+        - dash
+        - ksh

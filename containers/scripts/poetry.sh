@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
+: "[INFO] Running poetry install"
 poetry config virtualenvs.create false
-poetry install --without "dev,pre-commit"
+poetry install --only main
