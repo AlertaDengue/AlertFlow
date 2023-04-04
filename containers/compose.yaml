@@ -27,9 +27,9 @@ services:
       retries: 10
       start_period: 40s  # requires docker-compose 3.4
     volumes:
-      - ${VOLUMES_HOST_DIR}/airflow/dags:${AIRFLOW_HOME}/dags
-      - ${VOLUMES_HOST_DIR}/airflow/logs:${AIRFLOW_HOME}/logs
-      - ${VOLUMES_HOST_DIR}/airflow/plugins:${AIRFLOW_HOME}/plugins
+      - ${PROJECT_HOST_DIR}/volumes/airflow/dags:${AIRFLOW_HOME}/dags
+      - ${PROJECT_HOST_DIR}/volumes/airflow/logs:${AIRFLOW_HOME}/logs
+      - ${PROJECT_HOST_DIR}/volumes/airflow/plugins:${AIRFLOW_HOME}/plugins
     ports:
       - ${AIRFLOW_PORT}:8080
     depends_on:

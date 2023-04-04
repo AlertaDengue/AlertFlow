@@ -11,4 +11,4 @@ dependencies:
   - pip
   - pip:
     - containers-sugar == 1.4.2
-    - -r file:airflow-extras.in
+    - apache-airflow[amazon,async,celery,dask,docker,elasticsearch,ftp,grpc,hashicorp,http,ldap,odbc,pandas,postgres,redis,sendgrid,sftp,slack,ssh,statsd,virtualenv] >= 2.5.1

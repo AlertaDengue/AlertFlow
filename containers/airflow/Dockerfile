@@ -73,7 +73,6 @@ RUN sudo mkdir -p /opt/scripts /sources ${AIRFLOW_HOME} \
 
 COPY --chown=airflow:airflow poetry.lock pyproject.toml README.md /opt/services/
 COPY --chown=airflow:airflow conda/env-base.yaml /tmp/conda/env-base.yaml
-COPY --chown=airflow:airflow containers/airflow/airflow-extras.in /airflow-extras.in
 COPY --chown=airflow:airflow containers/scripts/* /opt/scripts
 COPY --chown=airflow:airflow containers/scripts/entrypoint.sh /entrypoint.sh
 COPY --chown=airflow:airflow containers/airflow/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
@@ -95,4 +94,4 @@ SHELL ["/bin/bash", "-c"]
 RUN source /opt/scripts/poetry.sh
 
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
-CMD ["/bin/bash" , "/opt/scripts/startup.sh"]
+CMD ["/bin/bash", "/opt/scripts/startup.sh"]
