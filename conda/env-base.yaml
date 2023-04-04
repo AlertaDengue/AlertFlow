@@ -4,6 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - python
+  - python-ldap
   - poetry >= 1.3.2
   - apache-airflow >= 2.5.1
   - sqlalchemy <2.0
