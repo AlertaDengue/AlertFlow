@@ -15,8 +15,11 @@ if [ "$is_conda_in_path" == 0 ]; then
 fi
 
 echo "[INFO] activate alertflow"
+# shellcheck disable=SC1091
 . /opt/conda/etc/profile.d/conda.sh &&
 conda activate alertflow
 
+# shellcheck disable=SC2145
 echo "Running: ${@}"
+# shellcheck disable=SC2091
 $("${@}")
