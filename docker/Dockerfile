@@ -10,7 +10,7 @@ USER airflow
 
 WORKDIR ${AIRFLOW_HOME}
 
-RUN pip install \
+RUN python3 -m pip install \
   plyvel \
   satellite-weather-downloader
 
