@@ -39,9 +39,24 @@ jobs:
       with:
         convention-name: conventionalcommits
 
-    - name: Lint All Files
+    - name: Install Conda Dependencies
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        miniconda-version: "latest"
+        mamba-version: "*"
+        environment-file: conda/env-base.yaml
+        channels: conda-forge,nodefaults
+        activate-environment: alertflow
+        use-mamba: true
+        miniforge-variant: Mambaforge
+
+    - name: Install Poetry Dependencies
       run: |
         touch .env
+        poetry install
+
+    - name: Lint All Files
+      run: |
         make linter
 
     - name: Build Base Image
