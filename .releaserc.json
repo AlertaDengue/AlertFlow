@@ -23,20 +23,6 @@
                 }
               ],
               "countMatches": true
-            },
-            {
-              "files": ["pyproject.toml"],
-              "from": "version = \".*\"  # changed by semantic-release",
-              "to": "version = \"${nextRelease.version}\"  # changed by semantic-release",
-              "results": [
-                {
-                  "file": "pyproject.toml",
-                  "hasChanged": true,
-                  "numMatches": 1,
-                  "numReplacements": 1
-                }
-              ],
-              "countMatches": true
             }
           ]
         }
