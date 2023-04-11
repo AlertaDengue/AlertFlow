@@ -50,11 +50,6 @@ jobs:
         use-mamba: true
         miniforge-variant: Mambaforge
 
-    - name: Install Poetry Dependencies
-      run: |
-        touch .env
-        poetry install
-
     - name: Lint All Files
       run: |
         make linter

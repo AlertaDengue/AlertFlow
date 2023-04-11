@@ -153,11 +153,11 @@ function create_www_user() {
     fi
 
     airflow users create \
-       --username "${_AIRFLOW_WWW_USER_USERNAME="admin"}" \
-       --firstname "${_AIRFLOW_WWW_USER_FIRSTNAME="Airflow"}" \
-       --lastname "${_AIRFLOW_WWW_USER_LASTNAME="Admin"}" \
-       --email "${_AIRFLOW_WWW_USER_EMAIL="airflowadmin@example.com"}" \
-       --role "${_AIRFLOW_WWW_USER_ROLE="Admin"}" \
+       --username "${_AIRFLOW_WWW_USER_USERNAME}" \
+       --firstname "${_AIRFLOW_WWW_USER_FIRSTNAME}" \
+       --lastname "${_AIRFLOW_WWW_USER_LASTNAME}" \
+       --email "${_AIRFLOW_WWW_USER_EMAIL}" \
+       --role "${_AIRFLOW_WWW_USER_ROLE}" \
        --password "${local_password}" || true
 }
 
@@ -171,7 +171,7 @@ function create_system_user_if_missing() {
     # Installed can be automatically added to PYTHONPATH
     if ! whoami &> /dev/null; then
       if [[ -w /etc/passwd ]]; then
-        echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${AIRFLOW_USER_HOME_DIR}:/sbin/nologin" \
+        echo "${USER_NAME:-alertflow}:x:$(id -u):0:${USER_NAME:-alertflow} user:${AIRFLOW_USER_HOME_DIR}:/sbin/nologin" \
             >> /etc/passwd
       fi
       export HOME="${AIRFLOW_USER_HOME_DIR}"
