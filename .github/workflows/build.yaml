@@ -50,6 +50,11 @@ jobs:
         use-mamba: true
         miniforge-variant: Mambaforge
 
+    - name: Create environment variables file
+      run: |
+        export AIRFLOW_UID=$(id -u)
+        envsubst < env.tpl > .env
+
     - name: Lint All Files
       run: |
         make linter
