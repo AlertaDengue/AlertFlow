@@ -10,7 +10,7 @@ env:
   AIRFLOW_PROJ_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
   AIRFLOW_HOME: /opt/airflow
   AIRFLOW_PORT: 8081
-  AIRFLOW_UID: 1000
+  AIRFLOW_UID: 50000
   _AIRFLOW_WWW_USER_USERNAME: ci
   _AIRFLOW_WWW_USER_PASSWORD: ci
   PSQL_USER_MAIN: ${{ secrets.CI_PSQL_USER }}
@@ -52,7 +52,6 @@ jobs:
 
     - name: Create environment variables file
       run: |
-        export AIRFLOW_UID=$(id -u)
         envsubst < env.tpl > .env
 
     - name: Lint All Files
