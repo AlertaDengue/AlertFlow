@@ -7,11 +7,9 @@ on:
     branches: [ main ]
 
 env:
-  AIRFLOW_PROJ_HOST_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
-  AIRFLOW_IMAGE_NAME: apache/airflow:2.5.1
-  HOST_UID: 1000
-  HOST_GID: 1000
-
+  AIRFLOW_PROJ_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
+  AIRFLOW_HOME: /opt/airflow
+  AIRFLOW_PORT: 8081
   _AIRFLOW_WWW_USER_USERNAME: ci
   _AIRFLOW_WWW_USER_PASSWORD: ci
   PSQL_USER_MAIN: ${{ secrets.CI_PSQL_USER }}
@@ -45,16 +43,16 @@ jobs:
       with:
         miniconda-version: "latest"
         mamba-version: "*"
-        environment-file: conda/env-base.yaml
+        environment-file: conda/env.yaml
         channels: conda-forge,nodefaults
         activate-environment: alertflow
         use-mamba: true
         miniforge-variant: Mambaforge
 
-    - name: Install Poetry Dependencies
+    - name: Create environment variables file
       run: |
-        touch .env
-        poetry install
+        export AIRFLOW_UID=$(id -u)
+        envsubst < env.tpl > .env
 
     - name: Lint All Files
       run: |

@@ -23,16 +23,6 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        miniconda-version: "latest"
-        mamba-version: "*"
-        environment-file: conda/env-base.yaml
-        channels: conda-forge,nodefaults
-        activate-environment: alertflow
-        use-mamba: true
-        miniforge-variant: Mambaforge
-
     - uses: actions/setup-node@v3
       with:
         node-version: 18

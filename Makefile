@@ -9,15 +9,15 @@ include .env
 # -- Docker --
 .PHONY: containers-build
 containers-build:
-	containers-sugar --group base build
+	docker compose --env-file .env --file docker/compose.yaml build
 
 .PHONY: containers-start
 containers-start:
-	containers-sugar --group airflow start
+	docker compose --env-file .env --file docker/compose.yaml up -d
 
 .PHONY: containers-down
 containers-down:
-	containers-sugar --group airflow down
+	docker compose --env-file .env --file docker/compose.yaml down -v --remove-orphans
 
 # .PHONY: containers-wait
 # containers-wait:
