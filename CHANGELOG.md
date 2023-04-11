@@ -1,6 +1,14 @@
 Release Notes
 ---
 
+## [1.1.1](https://github.com/AlertaDengue/AlertFlow/compare/1.1.0...1.1.1) (2023-04-11)
+
+
+### Bug Fixes
+
+* **containers:** rolling back to a short system ([#15](https://github.com/AlertaDengue/AlertFlow/issues/15)) ([5a15b22](https://github.com/AlertaDengue/AlertFlow/commit/5a15b226131d1fae029f0d138738d9b194a5095a))
+* **release:** fix semantic-release ([#16](https://github.com/AlertaDengue/AlertFlow/issues/16)) ([fccdd71](https://github.com/AlertaDengue/AlertFlow/commit/fccdd715c5c9cac4e7de668e32444d81a9b22d01))
+
 ## [1.1.0](https://github.com/AlertaDengue/AlertFlow/compare/1.0.0...1.1.0) (2023-03-17)
 
 
