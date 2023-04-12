@@ -21,6 +21,7 @@ RUN apt-get update \
     libbz2-dev \
     libpq-dev \
     python3-dev \
+    libsqlite3-dev \
     postgresql-client
 
 # Install Python 3.10
