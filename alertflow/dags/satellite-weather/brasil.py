@@ -1,19 +1,10 @@
-import re
 import os
-import sys
 import pendulum
-from dateutil import parser
 from datetime import timedelta
-from pathlib import Path, PosixPath
-from sqlalchemy import create_engine
 
 from airflow import DAG
 from airflow.decorators import task
-from airflow.operators.python import PythonVirtualenvOperator
 
-env = os.getenv
-email_main = env('EMAIL_MAIN')
-DATA_DIR = '/tmp/copernicus'
 DEFAULT_ARGS = {
     'owner': 'AlertaDengue',
     'depends_on_past': False,
@@ -24,7 +15,9 @@ DEFAULT_ARGS = {
     'retry_delay': timedelta(minutes=2),
 }
 
-
+env = os.getenv
+email_main = env('EMAIL_MAIN')
+DATA_DIR = '/tmp/copernicus'
 PG_URI_MAIN = (
     'postgresql://'
     f"{env('PSQL_USER_MAIN')}"
@@ -33,9 +26,7 @@ PG_URI_MAIN = (
     f":{env('PSQL_PORT_MAIN')}"
     f"/{env('PSQL_DB_MAIN')}"
 )
-TABLE_NAME = 'copernicus_brasil'
-SCHEMA = 'weather'
-
+CDSAPI_KEY = env('CDSAPI_KEY')
 
 with DAG(
     dag_id='COPERNICUS_BRASIL',
@@ -45,72 +36,71 @@ with DAG(
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 9),
     catchup=False, #TODO CHANGE TO TRUE
+    max_active_runs=8,
 ):
 
-    E = PythonVirtualenvOperator(
-        task_id='extract',
-        python_callable=download_netcdf,
-        requirements=["satellite-weather-downloader>=1.8.0"], 
-        python_version='/opt/py310/bin/python3.10',
-        expect_airflow=False,
-        system_site_packages=False,
-        # op_kwargs={'ini_date': '{{ ds }}'}
-    )
+    DATE = '{{ ds }}'
 
-    @task.virtualenv(
-        task_id="loading", 
-        requirements=["satellite-weather-downloader>=1.8.0"], 
-        python_version='/opt/py310/bin/python3.10',
-        expect_airflow=False,
-        system_site_packages=False
+    @task.external_python(
+        task_id="daily_fetch", 
+        python="/opt/py310/bin/python3.10"
     )
-    def extract_load_clean(**context) -> None:
-        """
-        Reads the NetCDF file and generate the dataframe for all
-        geocodes from IBGE using XArray and insert every geocode
-        into postgres database.
-        """
+    def extract_transform_load(
+        date: str, 
+        data_dir: str, 
+        api_key: str, 
+        psql_uri: str
+    ) -> None:
+        from pathlib import Path
+        from dateutil import parser
+        from datetime import timedelta
+        from sqlalchemy import create_engine
+        from satellite import weather as sat_w
         from satellite import downloader as sat_d
-    #     from satellite import weather as sat_w
-    #     from satellite.weather._brazil.extract_latlons import MUNICIPIOS
+        from satellite.weather._brazil.extract_latlons import MUNICIPIOS
 
-    #     ti = context['ti']
-    #     file = ti.xcom_pull(task_ids='extract')
+        try:
+            with create_engine(psql_uri).connect() as conn:
+                cur = conn.execute(
+                    f"SELECT DISTINCT(date) FROM weather.copernicus_brasil"
+                )
+                dates = cur.all()
+        except Exception as e:
+            if 'UndefinedTable' in str(e):
+                print("First insertion")
+                dates = []
+            else:
+                raise e
 
-    #     start_date = parser.parse(str(ini_date)).date()
-    #     max_update_delay = start_date - timedelta(days=9)
+        if date in dates:
+            print(f'[INFO] {date} has been fetched already.')
+            return None
 
-    #     try:
-    #         netcdf_file = sat_d.download_br_netcdf(
-    #             date=str(max_update_delay), data_dir=DATA_DIR
-    #         )
-    #         filepath = Path(DATA_DIR) / netcdf_file
-    #     except Exception as e:
-    #         raise e
+        start_date = parser.parse(str(date)).date()
+        max_update_delay = start_date - timedelta(days=9)
 
-    #     ds = sat_w.load_dataset(file)
-    #     geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
+        netcdf_file = sat_d.download_br_netcdf(
+            date=str(max_update_delay),
+            data_dir=data_dir,
+            user_key=api_key
+        )
+        filepath = Path(data_dir) / netcdf_file
 
-    #     df = ds.copebr.to_dataframe(geocodes, raw=False)
+        ds = sat_w.load_dataset(filepath)
+        geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
 
-    #     with create_engine(PG_URI_MAIN).connect() as conn:
-    #         df.to_sql(
-    #             name=TABLE_NAME,
-    #             schema=SCHEMA,
-    #             con=conn,
-    #             if_exists='append',
-    #         )
+        df = ds.copebr.to_dataframe(geocodes, raw=False)
 
-    # @task(task_id='clean')
-    # def remove_netcdf(**context):
-    #     """Remove the file downloaded by extract task"""
-    #     ti = context['ti']
-    #     file = ti.xcom_pull(task_ids='extract')
-    #     Path(file).unlink(missing_ok=False)
+        with create_engine(psql_uri).connect() as conn:
+            df.to_sql(
+                name='copernicus_brasil',
+                schema='weather',
+                con=conn,
+                if_exists='append',
+            )
 
-    # # Creating the tasks
-    # TL = upload_dataset()
-    # clean = remove_netcdf()
+        Path(filepath).unlink(missing_ok=False)
 
-    # # Task flow
-    # E >> TL >> clean
+    ETL = extract_transform_load(DATE, DATA_DIR, CDSAPI_KEY, PG_URI_MAIN)
+
+    ETL

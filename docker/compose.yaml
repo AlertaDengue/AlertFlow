@@ -24,8 +24,15 @@ x-airflow-common:
     dockerfile: docker/Dockerfile
   environment:
     &airflow-common-env
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
+    PSQL_USER_MAIN: ${PSQL_USER_MAIN}
+    PSQL_PASSWORD_MAIN: ${PSQL_PASSWORD_MAIN}
+    PSQL_HOST_MAIN: ${PSQL_HOST_MAIN}
+    PSQL_PORT_MAIN: ${PSQL_PORT_MAIN}
+    PSQL_DB_MAIN: ${PSQL_DB_MAIN}
+    CDSAPI_KEY: ${CDSAPI_KEY}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/dags:${AIRFLOW_HOME}/dags
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/logs:${AIRFLOW_HOME}/logs
@@ -161,6 +168,7 @@ services:
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env
+      CDSAPI_KEY: ${CDSAPI_KEY}
       _AIRFLOW_DB_UPGRADE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
