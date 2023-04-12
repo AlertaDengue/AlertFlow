@@ -1,16 +1,15 @@
+import re
 import os
+import sys
+import pendulum
+from dateutil import parser
 from datetime import timedelta
 from pathlib import Path, PosixPath
-
-import pendulum
-from airflow import DAG
-from airflow.decorators.python import python_task
-from airflow.operators.python import PythonOperator
-from dateutil import parser
-from satellite import downloader as sat_d
-from satellite import weather as sat_w
-from satellite.weather._brazil.extract_latlons import MUNICIPIOS
 from sqlalchemy import create_engine
+
+from airflow import DAG
+from airflow.decorators import task
+from airflow.operators.python import PythonVirtualenvOperator
 
 env = os.getenv
 email_main = env('EMAIL_MAIN')
@@ -45,66 +44,73 @@ with DAG(
     schedule='@daily',
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 9),
-    catchup=True,
+    catchup=False, #TODO CHANGE TO TRUE
 ):
 
-    def download_netcdf(ini_date: str) -> PosixPath:
-        """
-        Downloads the file for current task execution
-        date - 9 days for safety reasons. Returns the
-        local NetCDF4 file to be inserted into postgres.
-        """
-        start_date = parser.parse(str(ini_date)).date()
-        max_update_delay = start_date - timedelta(days=9)
-
-        try:
-            netcdf_file = sat_d.download_br_netcdf(
-                date=str(max_update_delay), data_dir=DATA_DIR
-            )
-            filepath = Path(DATA_DIR) / netcdf_file
-            return str(filepath.absolute())
-        except Exception as e:
-            raise e
-
-    # https://airflow.apache.org/docs/apache-airflow/stable/templates-ref.html#variables
-    E = PythonOperator(
+    E = PythonVirtualenvOperator(
         task_id='extract',
         python_callable=download_netcdf,
-        op_kwargs={'ini_date': '{{ ds }}'},
+        requirements=["satellite-weather-downloader>=1.8.0"], 
+        python_version='/opt/py310/bin/python3.10',
+        expect_airflow=False,
+        system_site_packages=False,
+        # op_kwargs={'ini_date': '{{ ds }}'}
     )
 
-    @python_task(task_id='loading')
-    def upload_dataset(**context) -> PosixPath:
+    @task.virtualenv(
+        task_id="loading", 
+        requirements=["satellite-weather-downloader>=1.8.0"], 
+        python_version='/opt/py310/bin/python3.10',
+        expect_airflow=False,
+        system_site_packages=False
+    )
+    def extract_load_clean(**context) -> None:
         """
         Reads the NetCDF file and generate the dataframe for all
         geocodes from IBGE using XArray and insert every geocode
         into postgres database.
         """
-        ti = context['ti']
-        file = ti.xcom_pull(task_ids='extract')
-        ds = sat_w.load_dataset(file)
-        geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
+        from satellite import downloader as sat_d
+    #     from satellite import weather as sat_w
+    #     from satellite.weather._brazil.extract_latlons import MUNICIPIOS
 
-        for geocode in geocodes:
-            df = ds.copebr.to_dataframe(geocodes=geocode, raw=False)
-            with create_engine(PG_URI_MAIN).connect() as conn:
-                df.to_sql(
-                    name=TABLE_NAME,
-                    schema=SCHEMA,
-                    con=conn,
-                    if_exists='append',
-                )
+    #     ti = context['ti']
+    #     file = ti.xcom_pull(task_ids='extract')
 
-    @python_task(task_id='clean')
-    def remove_netcdf(**context):
-        """Remove the file downloaded by extract task"""
-        ti = context['ti']
-        file = ti.xcom_pull(task_ids='extract')
-        Path(file).unlink(missing_ok=False)
+    #     start_date = parser.parse(str(ini_date)).date()
+    #     max_update_delay = start_date - timedelta(days=9)
 
-    # Creating the tasks
-    TL = upload_dataset()
-    clean = remove_netcdf()
+    #     try:
+    #         netcdf_file = sat_d.download_br_netcdf(
+    #             date=str(max_update_delay), data_dir=DATA_DIR
+    #         )
+    #         filepath = Path(DATA_DIR) / netcdf_file
+    #     except Exception as e:
+    #         raise e
 
-    # Task flow
-    E >> TL >> clean
+    #     ds = sat_w.load_dataset(file)
+    #     geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
+
+    #     df = ds.copebr.to_dataframe(geocodes, raw=False)
+
+    #     with create_engine(PG_URI_MAIN).connect() as conn:
+    #         df.to_sql(
+    #             name=TABLE_NAME,
+    #             schema=SCHEMA,
+    #             con=conn,
+    #             if_exists='append',
+    #         )
+
+    # @task(task_id='clean')
+    # def remove_netcdf(**context):
+    #     """Remove the file downloaded by extract task"""
+    #     ti = context['ti']
+    #     file = ti.xcom_pull(task_ids='extract')
+    #     Path(file).unlink(missing_ok=False)
+
+    # # Creating the tasks
+    # TL = upload_dataset()
+    # clean = remove_netcdf()
+
+    # # Task flow
+    # E >> TL >> clean
