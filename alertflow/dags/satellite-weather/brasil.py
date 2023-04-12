@@ -1,7 +1,7 @@
 import os
-import pendulum
 from datetime import timedelta
 
+import pendulum
 from airflow import DAG
 from airflow.decorators import task
 
@@ -35,39 +35,36 @@ with DAG(
     schedule='@daily',
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 9),
-    catchup=False, #TODO CHANGE TO TRUE
+    catchup=False,  # TODO CHANGE TO TRUE
     max_active_runs=8,
 ):
 
     DATE = '{{ ds }}'
 
     @task.external_python(
-        task_id="daily_fetch", 
-        python="/opt/py310/bin/python3.10"
+        task_id='daily_fetch', python='/opt/py310/bin/python3.10'
     )
     def extract_transform_load(
-        date: str, 
-        data_dir: str, 
-        api_key: str, 
-        psql_uri: str
+        date: str, data_dir: str, api_key: str, psql_uri: str
     ) -> None:
-        from pathlib import Path
-        from dateutil import parser
         from datetime import timedelta
-        from sqlalchemy import create_engine
-        from satellite import weather as sat_w
+        from pathlib import Path
+
+        from dateutil import parser
         from satellite import downloader as sat_d
+        from satellite import weather as sat_w
         from satellite.weather._brazil.extract_latlons import MUNICIPIOS
+        from sqlalchemy import create_engine
 
         try:
             with create_engine(psql_uri).connect() as conn:
                 cur = conn.execute(
-                    f"SELECT DISTINCT(date) FROM weather.copernicus_brasil"
+                    'SELECT DISTINCT(date) FROM weather.copernicus_brasil'
                 )
                 dates = cur.all()
         except Exception as e:
             if 'UndefinedTable' in str(e):
-                print("First insertion")
+                print('First insertion')
                 dates = []
             else:
                 raise e
@@ -80,9 +77,7 @@ with DAG(
         max_update_delay = start_date - timedelta(days=9)
 
         netcdf_file = sat_d.download_br_netcdf(
-            date=str(max_update_delay),
-            data_dir=data_dir,
-            user_key=api_key
+            date=str(max_update_delay), data_dir=data_dir, user_key=api_key
         )
         filepath = Path(data_dir) / netcdf_file
 
