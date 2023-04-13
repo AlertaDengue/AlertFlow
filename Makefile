@@ -40,6 +40,9 @@ containers-rm:
 
 containers-restart: containers-stop containers-start
 
+containers-down:
+	$(CONTAINER_APP) down ${ARGS}
+
 containers-logs:
 	$(CONTAINER_APP) logs ${ARGS} ${SERVICES}
 

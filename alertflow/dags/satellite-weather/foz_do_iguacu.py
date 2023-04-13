@@ -35,7 +35,7 @@ with DAG(
     schedule='@weekly',
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 9),
-    catchup=False,  # TODO CHANGE TO TRUE
+    catchup=True,
     max_active_runs=15,
 ):
 
