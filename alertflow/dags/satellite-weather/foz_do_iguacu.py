@@ -47,10 +47,11 @@ with DAG(
     def extract_transform_load(
         date: str, data_dir: str, api_key: str, psql_uri: str
     ) -> None:
-        from datetime import timedelta
         from pathlib import Path
-
         from dateutil import parser
+        from itertools import chain
+        from datetime import timedelta
+
         from satellite import downloader as sat_d
         from satellite import weather as sat_w
         from sqlalchemy import create_engine
@@ -58,10 +59,10 @@ with DAG(
         try:
             with create_engine(psql_uri).connect() as conn:
                 cur = conn.execute(
-                    'SELECT DISTINCT(date) '
+                    'SELECT DISTINCT(datetime::DATE) '
                     'FROM weather.copernicus_foz_do_iguacu'
                 )
-                dates = cur.all()
+                dates = list(chain(*cur.all()))
         except Exception as e:
             if 'UndefinedTable' in str(e):
                 print('First insertion')
@@ -69,17 +70,18 @@ with DAG(
             else:
                 raise e
 
-        if date in dates:
+        exec_date = parser.parse(str(date)).date()
+        max_update_delay = exec_date - timedelta(days=9)
+        start_date = max_update_delay - timedelta(days=7)
+
+        format_date = lambda dt: dt.strftime('%F')
+        if str(format_date(start_date)) in list(map(format_date, dates)):
             print(f'[INFO] {date} has been fetched already.')
             return None
 
-        start_date = parser.parse(str(date)).date()
-        max_update_delay = start_date - timedelta(days=9)
-        end_date = max_update_delay - timedelta(days=7)
-
         netcdf_file = sat_d.download_br_netcdf(
-            date=str(max_update_delay),
-            date_end=str(end_date),
+            date=str(start_date),
+            date_end=str(max_update_delay),
             data_dir=data_dir,
             user_key=api_key,
         )
@@ -96,8 +98,9 @@ with DAG(
                 con=conn,
                 if_exists='append',
             )
-
-        Path(filepath).unlink(missing_ok=False)
+        print(f'{filepath} inserted into weather.copernicus_foz_do_iguacu')
+        
+        Path(filepath).unlink(missing_ok=True)
 
     ETL = extract_transform_load(DATE, DATA_DIR, CDSAPI_KEY, PG_URI_MAIN)
 
