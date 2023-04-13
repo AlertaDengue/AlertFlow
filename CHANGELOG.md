@@ -1,6 +1,13 @@
 Release Notes
 ---
 
+## [1.1.2](https://github.com/AlertaDengue/AlertFlow/compare/1.1.1...1.1.2) (2023-04-13)
+
+
+### Bug Fixes
+
+* **satellite:** create satellite environment w/ py3.10 ([#17](https://github.com/AlertaDengue/AlertFlow/issues/17)) ([5e7ef86](https://github.com/AlertaDengue/AlertFlow/commit/5e7ef8658366328785f51a939630d529868d740e))
+
 ## [1.1.1](https://github.com/AlertaDengue/AlertFlow/compare/1.1.0...1.1.1) (2023-04-11)
 
 
