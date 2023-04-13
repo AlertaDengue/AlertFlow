@@ -36,7 +36,7 @@ with DAG(
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 9),
     catchup=False,  # TODO CHANGE TO TRUE
-    max_active_runs=10,
+    max_active_runs=15,
 ):
 
     DATE = '{{ ds }}'

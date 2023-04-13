@@ -1,7 +1,13 @@
 FROM apache/airflow:2.5.3
 
+LABEL maintainer="Luã Bida Vacaro <luabidaa@gmail.com>"
+LABEL org.opencontainers.image.title="AlertFlow"
+LABEL org.opencontainers.image.authors="InfoDengue Team"
+LABEL org.opencontainers.image.source="https://github.com/AlertaDengue/AlertFlow"
+LABEL org.opencontainers.image.version="latest"
+LABEL org.opencontainers.image.description="Airflow containers system for AlertaDengue"
+
 USER root
-ENV CDSAPI_KEY=${CDSAPI_KEY}
 
 RUN apt-get update \
     && apt-get install -y \
