@@ -47,11 +47,11 @@ with DAG(
     def extract_transform_load(
         date: str, data_dir: str, api_key: str, psql_uri: str
     ) -> None:
-        from pathlib import Path
-        from dateutil import parser
+        from datetime import datetime, timedelta
         from itertools import chain
-        from datetime import timedelta
+        from pathlib import Path
 
+        from dateutil import parser
         from satellite import downloader as sat_d
         from satellite import weather as sat_w
         from sqlalchemy import create_engine
@@ -74,7 +74,9 @@ with DAG(
         max_update_delay = exec_date - timedelta(days=9)
         start_date = max_update_delay - timedelta(days=7)
 
-        format_date = lambda dt: dt.strftime('%F')
+        def format_date(dt: datetime):
+            return dt.strftime('%F')
+
         if str(format_date(start_date)) in list(map(format_date, dates)):
             print(f'[INFO] {date} has been fetched already.')
             return None
@@ -99,7 +101,7 @@ with DAG(
                 if_exists='append',
             )
         print(f'{filepath} inserted into weather.copernicus_foz_do_iguacu')
-        
+
         Path(filepath).unlink(missing_ok=True)
 
     ETL = extract_transform_load(DATE, DATA_DIR, CDSAPI_KEY, PG_URI_MAIN)

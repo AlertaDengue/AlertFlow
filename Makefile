@@ -51,4 +51,3 @@ containers-wait-all:
 	$(MAKE) containers-wait SERVICE="triggerer"
 	$(MAKE) containers-wait SERVICE="webserver"
 	$(MAKE) containers-wait SERVICE="worker"
-
