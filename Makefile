@@ -1,28 +1,18 @@
 #* Variables
-SHELL:=/usr/bin/env bash
+SERVICES:=
+SERVICE:=
+CMD:=
 ARGS:=
-CONSOLE:=bash
-TIMEOUT:=180
+TIMEOUT:=90
+
+# https://github.com/containers/podman-compose/issues/491#issuecomment-1289944841
+CONTAINER_APP=docker compose \
+	--env-file=.env \
+	--file docker/compose.yaml
 
 include .env
 
-# -- Docker --
-.PHONY: containers-build
-containers-build:
-	docker compose --env-file .env --file docker/compose.yaml build
-
-.PHONY: containers-start
-containers-start:
-	docker compose --env-file .env --file docker/compose.yaml up -d
-
-.PHONY: containers-down
-containers-down:
-	docker compose --env-file .env --file docker/compose.yaml down -v --remove-orphans
-
-# .PHONY: containers-wait
-# containers-wait:
-    # TODO
-
+# -- Project --
 .PHONY: env
 env:
 	envsubst < env.tpl > .env
@@ -30,3 +20,37 @@ env:
 .PHONY: linter
 linter:
 	pre-commit run --all-files --verbose
+
+# -- Docker --
+containers-build:
+	set -e
+	$(CONTAINER_APP) build ${SERVICES}
+
+containers-start:
+	set -ex
+	$(CONTAINER_APP) up --remove-orphans -d ${SERVICES}
+
+containers-stop:
+	set -ex
+	$(CONTAINER_APP) stop ${ARGS} ${SERVICES}
+
+containers-rm:
+	set -ex
+	$(CONTAINER_APP) rm ${ARGS} ${SERVICES}
+
+containers-restart: containers-stop containers-start
+
+containers-down:
+	$(CONTAINER_APP) down ${ARGS}
+
+containers-logs:
+	$(CONTAINER_APP) logs ${ARGS} ${SERVICES}
+
+containers-wait:
+	timeout ${TIMEOUT} docker/scripts/healthcheck.sh ${SERVICE}
+
+containers-wait-all:
+	$(MAKE) containers-wait SERVICE="scheduler"
+	$(MAKE) containers-wait SERVICE="triggerer"
+	$(MAKE) containers-wait SERVICE="webserver"
+	$(MAKE) containers-wait SERVICE="worker"

@@ -24,8 +24,15 @@ x-airflow-common:
     dockerfile: docker/Dockerfile
   environment:
     &airflow-common-env
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
+    PSQL_USER_MAIN: ${PSQL_USER_MAIN}
+    PSQL_PASSWORD_MAIN: ${PSQL_PASSWORD_MAIN}
+    PSQL_HOST_MAIN: ${PSQL_HOST_MAIN}
+    PSQL_PORT_MAIN: ${PSQL_PORT_MAIN}
+    PSQL_DB_MAIN: ${PSQL_DB_MAIN}
+    CDSAPI_KEY: ${CDSAPI_KEY}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/dags:${AIRFLOW_HOME}/dags
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/logs:${AIRFLOW_HOME}/logs
@@ -33,16 +40,16 @@ x-airflow-common:
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
-    alertflow-redis:
+    redis:
       condition: service_healthy
-    alertflow-postgres:
+    postgres:
       condition: service_healthy
 
 services:
-  alertflow-postgres:
+  postgres:
     image: postgres:14
-    hostname: alertflow-postgres
-    container_name: alertflow-postgres
+    hostname: postgres
+    container_name: alertflow_postgres
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -56,10 +63,10 @@ services:
       start_period: 5s
     restart: always
 
-  alertflow-redis:
+  redis:
     image: redis:latest
-    hostname: alertflow-redis
-    container_name: alertflow-redis
+    hostname: redis
+    container_name: alertflow_redis
     expose:
       - 6379
     healthcheck:
@@ -70,11 +77,12 @@ services:
       start_period: 30s
     restart: always
 
-  alertflow-webserver:
+  webserver:
     <<: *airflow-common
     command: webserver
-    hostname: alertflow-webserver
-    container_name: alertflow-webserver
+    image: alertflow:latest
+    hostname: webserver
+    container_name: alertflow_webserver
     ports:
       - "${AIRFLOW_PORT:-8081}:8080"
     healthcheck:
@@ -86,14 +94,15 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      alertflow-init:
+      startup:
         condition: service_completed_successfully
 
-  alertflow-scheduler:
+  scheduler:
     <<: *airflow-common
     command: scheduler
-    hostname: alertflow-scheduler
-    container_name: alertflow-scheduler
+    image: alertflow:latest
+    hostname: scheduler
+    container_name: alertflow_scheduler
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -103,14 +112,15 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      alertflow-init:
+      startup:
         condition: service_completed_successfully
 
-  alertflow-worker:
+  worker:
     <<: *airflow-common
     command: celery worker
-    hostname: alertflow-worker
-    container_name: alertflow-worker
+    image: alertflow:latest
+    hostname: worker
+    container_name: alertflow_worker
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -127,14 +137,15 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      alertflow-init:
+      startup:
         condition: service_completed_successfully
 
-  alertflow-triggerer:
+  triggerer:
     <<: *airflow-common
     command: triggerer
-    hostname: alertflow-triggerer
-    container_name: alertflow-triggerer
+    image: alertflow:latest
+    hostname: triggerer
+    container_name: alertflow_triggerer
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
       interval: 30s
@@ -144,13 +155,14 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      alertflow-init:
+      startup:
         condition: service_completed_successfully
 
-  alertflow-init:
+  startup:
     <<: *airflow-common
     entrypoint: /bin/bash
-    container_name: alertflow-init
+    image: alertflow:latest
+    container_name: alertflow_startup
     # yamllint disable rule:line-length
     command:
       - -c
@@ -161,6 +173,7 @@ services:
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env
+      CDSAPI_KEY: ${CDSAPI_KEY}
       _AIRFLOW_DB_UPGRADE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
@@ -169,7 +182,7 @@ services:
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}/alertflow:/sources
 
-  airflow-cli:
+  cli:
     <<: *airflow-common
     profiles:
       - debug
@@ -182,11 +195,12 @@ services:
       - -c
       - airflow
 
-  alertflow-flower:
+  flower:
     <<: *airflow-common
     command: celery flower
-    hostname: alertflow-flower
-    container_name: alertflow-flower
+    image: alertflow:latest
+    hostname: flower
+    container_name: alertflow_flower
     profiles:
       - flower
     ports:
@@ -200,7 +214,7 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      alertflow-init:
+      startup:
         condition: service_completed_successfully
 
 volumes:
