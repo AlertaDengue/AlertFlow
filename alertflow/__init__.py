@@ -1,10 +1,8 @@
 """
-ᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖ
 Author: Luã Bida Vacaro
 Email: luabidaa@gmail.com
 Github: https://github.com/luabida
 Date: 2023-04-13
-ᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖ
 """
 from importlib import metadata as importlib_metadata
 

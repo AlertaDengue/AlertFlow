@@ -1,10 +1,8 @@
 """
-ᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖ
 Author: Luã Bida Vacaro
 Email: luabidaa@gmail.com
 Github: https://github.com/luabida
 Date: 2023-04-13
-ᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖ
 
 The COPERNICUS_BRASIL Airflow DAG will collect daily weather
 data from the Copernicus ERA5 Reanalysis dataset for all 5570
@@ -23,6 +21,9 @@ import pendulum
 from airflow import DAG
 from airflow.decorators import task
 
+env = os.getenv
+email_main = env('EMAIL_MAIN')
+
 DEFAULT_ARGS = {
     'owner': 'AlertaDengue',
     'depends_on_past': False,
@@ -33,31 +34,23 @@ DEFAULT_ARGS = {
     'retry_delay': timedelta(minutes=2),
 }
 
-env = os.getenv
-email_main = env('EMAIL_MAIN')
-DATA_DIR = '/tmp/copernicus'
-PG_URI_MAIN = (
-    'postgresql://'
-    f"{env('PSQL_USER_MAIN')}"
-    f":{env('PSQL_PASSWORD_MAIN')}"
-    f"@{env('PSQL_HOST_MAIN')}"
-    f":{env('PSQL_PORT_MAIN')}"
-    f"/{env('PSQL_DB_MAIN')}"
-)
-CDSAPI_KEY = env('CDSAPI_KEY')
 
 with DAG(
     dag_id='COPERNICUS_BRASIL',
     description='ETL of weather data for Brazil',
     tags=['Brasil', 'Copernicus'],
-    schedule='@daily',
+    schedule='@monthly',
     default_args=DEFAULT_ARGS,
-    start_date=pendulum.datetime(2000, 1, 9),
+    start_date=pendulum.datetime(2015, 1, 16),
     catchup=True,
-    max_active_runs=8,
+    max_active_runs=4,
 ):
+    from airflow.models import Variable
 
     DATE = '{{ ds }}'   # DAG execution date
+    DATA_DIR = '/tmp/copernicus'
+    KEY = Variable.get('cdsapi_key', deserialize_json=True)
+    URI = Variable.get('psql_main_uri', deserialize_json=True)
 
     @task.external_python(
         task_id='daily_fetch', python='/opt/py310/bin/python3.10'
@@ -79,8 +72,8 @@ with DAG(
         Postgres DB, as specified in the .env file, in the form of a
         DataFrame containing the weather information.
         """
-        from datetime import datetime, timedelta
-        from itertools import chain
+        import calendar
+        from datetime import timedelta, datetime
         from pathlib import Path
 
         from dateutil import parser
@@ -89,69 +82,77 @@ with DAG(
         from satellite.weather._brazil.extract_latlons import MUNICIPIOS
         from sqlalchemy import create_engine
 
-        def format_date(dt: datetime):
-            return dt.strftime('%F')
+        start_date = parser.parse(str(date))
+        # max_update_delay = start_date - timedelta(days=8)
 
-        def is_date_in_db(date: str) -> bool:
+        if start_date.month == 1:
+            ini_date = datetime(start_date.year - 1, 12, 1).date()
+        else:
+            ini_date = datetime(start_date.year, start_date.month - 1, 1).date()
+
+        end_date = datetime(
+            ini_date.year,
+            ini_date.month,
+            calendar.monthrange(ini_date.year, ini_date.month)[1],
+        ).date()
+
+
+        # Downloads daily dataset
+        netcdf_file = sat_d.download_br_netcdf(
+            date=str(ini_date),
+            date_end=str(end_date), 
+            data_dir=data_dir, 
+            user_key=api_key['CDSAPI_KEY']
+        )
+
+        print(f'Handling {netcdf_file}')
+
+        # Reads the NetCDF4 file using Xarray
+        ds = sat_w.load_dataset(netcdf_file)
+        geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
+
+        def geocode_in_db(geocode: int) -> bool:
             # Checks if date has been already inserted into DB
             try:
-                with create_engine(psql_uri).connect() as conn:
+                with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
                     cur = conn.execute(
-                        'SELECT DISTINCT(date::DATE)'
-                        ' FROM weather.copernicus_brasil'
+                        'SELECT EXISTS ('
+                        ' SELECT FROM weather.copernicus_brasil'
+                        f" WHERE date = '{ini_date}' AND geocodigo = {geocode}"
+                        ')'
                     )
-                    dates = list(chain(*cur.all()))
+                    return cur.fetchone()[0]
             except Exception as e:
                 if 'UndefinedTable' in str(e):
                     # For dev purposes, in case table was not found
                     print('First insertion')
-                    dates = []
+                    return False
                 else:
                     raise e
 
-            if str(date) in list(map(format_date, dates)):
-                return True
-            return False
+        for geocode in geocodes:
+            print(f'Handling {geocode}', flush=True)
 
-        start_date = parser.parse(str(date)).date()
-        max_update_delay = start_date - timedelta(days=9)
+            if geocode_in_db(geocode):
+                print(f'{geocode} already in DB')
+                continue
 
-        if is_date_in_db(date=format_date(max_update_delay)):
-            print(f'[INFO] {date} has been fetched already.')
-            return None
-
-        # Downloads daily dataset
-        netcdf_file = sat_d.download_br_netcdf(
-            date=str(max_update_delay), data_dir=data_dir, user_key=api_key
-        )
-        filepath = Path(data_dir) / netcdf_file
-        print(f'[INFO] Handling {filepath}')
-
-        # Reads the NetCDF4 file using Xarray
-        ds = sat_w.load_dataset(filepath)
-        geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
-
-        # Transforms the data into Pandas DataFrame
-        df = ds.copebr.to_dataframe(geocodes, raw=False)
-
-        # Inserts weather data into DB
-        with create_engine(psql_uri).connect() as conn:
-            if is_date_in_db(date=format_date(max_update_delay)):
-                # Second assertion in case file is being handle twice
-                print(f'[INFO] {date} has been fetched already.')
-                return None
-
-            df.to_sql(
-                name='copernicus_brasil',
-                schema='weather',
-                con=conn,
-                if_exists='append',
-            )
+            try:
+                ds.copebr.to_sql(
+                    tablename='copernicus_brasil',
+                    schema='weather',
+                    geocodes=geocode,
+                    sql_uri=psql_uri['PSQL_MAIN_URI'],
+                )
+                print(f'{geocode} inserted into DB')
+            except Exception as e:
+                print(type(e))
+                continue
 
         # Deletes the NetCDF4 file
-        Path(filepath).unlink(missing_ok=True)
+        Path(netcdf_file).unlink(missing_ok=True)
 
     # Instantiate the Task
-    ETL = extract_transform_load(DATE, DATA_DIR, CDSAPI_KEY, PG_URI_MAIN)
+    ETL = extract_transform_load(DATE, DATA_DIR, KEY, URI)
 
     ETL   # Execute

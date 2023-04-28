@@ -1,10 +1,9 @@
 """
-ᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖ
+
 Author: Luã Bida Vacaro
 Email: luabidaa@gmail.com
 Github: https://github.com/luabida
 Date: 2023-04-13
-ᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖᆖᆖᆖᆖᆖᆖᆖᆖλᆖ
 
 The COPERNICUS_FOZ Airflow DAG will retrieve weekly weather data
 for the Brazilian city of Foz do Iguaçu by accessing the Copernicus
@@ -21,6 +20,7 @@ from datetime import timedelta
 import pendulum
 from airflow import DAG
 from airflow.decorators import task
+from airflow.models import Variable
 
 DEFAULT_ARGS = {
     'owner': 'AlertaDengue',
@@ -35,15 +35,8 @@ DEFAULT_ARGS = {
 env = os.getenv
 email_main = env('EMAIL_MAIN')
 DATA_DIR = '/tmp/copernicus'
-PG_URI_MAIN = (
-    'postgresql://'
-    f"{env('PSQL_USER_MAIN')}"
-    f":{env('PSQL_PASSWORD_MAIN')}"
-    f"@{env('PSQL_HOST_MAIN')}"
-    f":{env('PSQL_PORT_MAIN')}"
-    f"/{env('PSQL_DB_MAIN')}"
-)
-CDSAPI_KEY = env('CDSAPI_KEY')
+KEY = Variable.get('cdsapi_key', deserialize_json=True)
+URI = Variable.get('psql_main_uri', deserialize_json=True)
 
 with DAG(
     dag_id='COPERNICUS_FOZ',
@@ -89,7 +82,7 @@ with DAG(
 
         try:
             # Check if date has been already inserted
-            with create_engine(psql_uri).connect() as conn:
+            with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
                 cur = conn.execute(
                     'SELECT DISTINCT(datetime::DATE) '
                     'FROM weather.copernicus_foz_do_iguacu'
@@ -118,7 +111,7 @@ with DAG(
             date=str(start_date),
             date_end=str(max_update_delay),
             data_dir=data_dir,
-            user_key=api_key,
+            user_key=api_key['CDSAPI_KEY'],
         )
         filepath = Path(data_dir) / netcdf_file
 
@@ -129,9 +122,10 @@ with DAG(
         df = ds.copebr.to_dataframe(4108304, raw=True)
 
         # Insert the DataFrame into DB
-        with create_engine(psql_uri).connect() as conn:
+        with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
             df.to_sql(
                 name='copernicus_foz_do_iguacu',
+                index=False,
                 schema='weather',
                 con=conn,
                 if_exists='append',
@@ -142,6 +136,11 @@ with DAG(
         Path(filepath).unlink(missing_ok=True)
 
     # Instantiate the Task
-    ETL = extract_transform_load(DATE, DATA_DIR, CDSAPI_KEY, PG_URI_MAIN)
+    ETL = extract_transform_load(
+        DATE, 
+        DATA_DIR, 
+        KEY, 
+        URI
+    )
 
     ETL   # Execute
