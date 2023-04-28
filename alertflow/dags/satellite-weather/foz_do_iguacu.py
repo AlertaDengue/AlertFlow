@@ -1,5 +1,4 @@
 """
-
 Author: Luã Bida Vacaro
 Email: luabidaa@gmail.com
 Github: https://github.com/luabida
