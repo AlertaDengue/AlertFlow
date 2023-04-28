@@ -73,7 +73,7 @@ with DAG(
         DataFrame containing the weather information.
         """
         import calendar
-        from datetime import timedelta, datetime
+        from datetime import datetime
         from pathlib import Path
 
         from dateutil import parser
@@ -88,7 +88,9 @@ with DAG(
         if start_date.month == 1:
             ini_date = datetime(start_date.year - 1, 12, 1).date()
         else:
-            ini_date = datetime(start_date.year, start_date.month - 1, 1).date()
+            ini_date = datetime(
+                start_date.year, start_date.month - 1, 1
+            ).date()
 
         end_date = datetime(
             ini_date.year,
@@ -96,13 +98,12 @@ with DAG(
             calendar.monthrange(ini_date.year, ini_date.month)[1],
         ).date()
 
-
         # Downloads daily dataset
         netcdf_file = sat_d.download_br_netcdf(
             date=str(ini_date),
-            date_end=str(end_date), 
-            data_dir=data_dir, 
-            user_key=api_key['CDSAPI_KEY']
+            date_end=str(end_date),
+            data_dir=data_dir,
+            user_key=api_key['CDSAPI_KEY'],
         )
 
         print(f'Handling {netcdf_file}')
@@ -114,7 +115,9 @@ with DAG(
         def geocode_in_db(geocode: int) -> bool:
             # Checks if date has been already inserted into DB
             try:
-                with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
+                with create_engine(
+                    psql_uri['PSQL_MAIN_URI']
+                ).connect() as conn:
                     cur = conn.execute(
                         'SELECT EXISTS ('
                         ' SELECT FROM weather.copernicus_brasil'

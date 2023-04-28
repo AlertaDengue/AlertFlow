@@ -135,11 +135,6 @@ with DAG(
         Path(filepath).unlink(missing_ok=True)
 
     # Instantiate the Task
-    ETL = extract_transform_load(
-        DATE, 
-        DATA_DIR, 
-        KEY, 
-        URI
-    )
+    ETL = extract_transform_load(DATE, DATA_DIR, KEY, URI)
 
     ETL   # Execute
