@@ -22,6 +22,9 @@ x-airflow-common:
   build: 
     context: ..
     dockerfile: docker/Dockerfile
+    args:
+      HOST_UID: ${HOST_UID}
+      HOST_GID: ${HOST_GID}
   environment:
     &airflow-common-env
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
