@@ -15,11 +15,11 @@ env:
   HOST_GID: 1000
   _AIRFLOW_WWW_USER_USERNAME: ci
   _AIRFLOW_WWW_USER_PASSWORD: ci
-  PSQL_USER_MAIN: ${{ secrets.CI_PSQL_USER }}
-  PSQL_PASSWORD_MAIN: ${{ secrets.CI_PSQL_PASSWORD }}
-  PSQL_HOST_MAIN: ${{ secrets.CI_PSQL_HOST }}
-  PSQL_PORT_MAIN: ${{ secrets.CI_PSQL_PORT }}
-  PSQL_DB_MAIN: ${{ secrets.CI_PSQL_DB }}
+  # PSQL_USER_MAIN: ${{ secrets.CI_PSQL_USER }}
+  # PSQL_PASSWORD_MAIN: ${{ secrets.CI_PSQL_PASSWORD }}
+  # PSQL_HOST_MAIN: ${{ secrets.CI_PSQL_HOST }}
+  # PSQL_PORT_MAIN: ${{ secrets.CI_PSQL_PORT }}
+  # PSQL_DB_MAIN: ${{ secrets.CI_PSQL_DB }}
 
 jobs:
   main:
@@ -35,6 +35,23 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    # Check if the repository is a fork
+    - name: Check if repository is a fork
+      run: |
+        if [[ "${{ github.event.repository.fork }}" == "true" ]]; then
+          export PSQL_USER_MAIN="${{ secrets.CI_PSQL_USER_FORK }}"
+          export PSQL_PASSWORD_MAIN="${{ secrets.CI_PSQL_PASSWORD_FORK }}"
+          export PSQL_HOST_MAIN="${{ secrets.CI_PSQL_HOST_FORK }}"
+          export PSQL_PORT_MAIN="${{ secrets.CI_PSQL_PORT_FORK }}"
+          export PSQL_DB_MAIN="${{ secrets.CI_PSQL_DB_FORK }}"
+        else
+          export PSQL_USER_MAIN="${{ secrets.CI_PSQL_USER }}"
+          export PSQL_PASSWORD_MAIN="${{ secrets.CI_PSQL_PASSWORD }}"
+          export PSQL_HOST_MAIN="${{ secrets.CI_PSQL_HOST }}"
+          export PSQL_PORT_MAIN="${{ secrets.CI_PSQL_PORT }}"
+          export PSQL_DB_MAIN="${{ secrets.CI_PSQL_DB }}"
+        fi
 
     - name: Semantic Release Title Check
       uses: osl-incubator/semantic-release-pr-title-check@v1.4.1
@@ -54,7 +71,6 @@ jobs:
 
     - name: Create environment variables file
       run: |
-        export AIRFLOW_UID=$(id -u)
         envsubst < env.tpl > .env
 
     - name: Lint All Files
