@@ -41,10 +41,7 @@ RUN addgroup --gid ${HOST_GID} airflow \
  && usermod -u ${HOST_UID} -g ${HOST_GID} -d /home/airflow -s /bin/bash airflow \
  && echo "airflow ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/airflow \
  && chmod 0440 /etc/sudoers.d/airflow \
- && chown ${HOST_UID}:${HOST_GID} ${AIRFLOW_HOME}/ /opt/airflow/ \
- && chown -R ${HOST_UID}:${HOST_GID} /home/airflow \
- && chown -R ${HOST_UID}:${HOST_GID} /opt/airflow/airflow.cfg \
- && chown -R ${HOST_UID}:${HOST_GID} /opt/airflow/logs
+ && chown -R ${HOST_UID}:${HOST_GID} ${AIRFLOW_HOME}/ /opt/airflow/
 
 ENV PATH "$PATH:/home/airflow/.local/bin"
 ENV PATH "$PATH:/usr/bin/dirname"

@@ -312,4 +312,10 @@ if [[ ${AIRFLOW_COMMAND} =~ ^(scheduler|celery)$ ]] \
     wait_for_celery_broker
 fi
 
+# Get the HOST_GID from the .env file
+# HOST_GID=$(grep -E "^HOST_GID=" .env | cut -d'=' -f2)
+
+# Change the group of '/opt/airflow' directory
+sudo chgrp -R ${HOST_GID} /opt/airflow/
+
 exec "airflow" "${@}"
