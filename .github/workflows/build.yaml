@@ -58,6 +58,10 @@ jobs:
       with:
         convention-name: conventionalcommits
 
+    - name: Setup tmate session
+      # if: "${{ failure() }}"
+      uses: mxschmitt/action-tmate@v3
+
     - name: Install Conda Dependencies
       uses: conda-incubator/setup-miniconda@v2
       with:
@@ -79,6 +83,7 @@ jobs:
 
     - name: Build Base Image
       run: |
+        sudo systemctl start postgresql.service
         make containers-build
 
     - name: Start Airflow
@@ -89,6 +94,3 @@ jobs:
       run: |
         make containers-wait-all
 
-    - name: Setup tmate session
-      if: "${{ failure() }}"
-      uses: mxschmitt/action-tmate@v3

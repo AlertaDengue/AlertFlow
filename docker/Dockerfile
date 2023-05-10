@@ -14,38 +14,26 @@ ARG HOST_GID
 
 RUN apt-get update \
     && apt-get install -y \
-    curl \
-    git \
     vim \
     sed \
     tar \
     gcc \
+    ssh \
+    curl \
     make \
     lzma \
-    libssl-dev \
+    rsync \
     libtk8.6 \
+    libpq-dev \
+    libssl-dev \
     libgdm-dev \
-    libdb4o-cil-dev \
+    libbz2-dev \
     liblzma-dev \
     libpcap-dev \
-    libbz2-dev \
-    libpq-dev \
     python3-dev \
     libsqlite3-dev \
-    postgresql-client \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
-
-
-RUN addgroup --gid ${HOST_GID} airflow \
- && usermod -u ${HOST_UID} -g ${HOST_GID} -d /home/airflow -s /bin/bash airflow \
- && echo "airflow ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/airflow \
- && chmod 0440 /etc/sudoers.d/airflow \
- && chown -R ${HOST_UID}:${HOST_GID} ${AIRFLOW_HOME}/ /opt/airflow/
-
-ENV PATH "$PATH:/home/airflow/.local/bin"
-ENV PATH "$PATH:/usr/bin/dirname"
-
+    libdb4o-cil-dev \
+    postgresql-client
 
 # Install Python 3.10
 RUN curl https://www.python.org/ftp/python/3.10.8/Python-3.10.8.tgz -o /tmp/Python-3.10.8.tgz \
@@ -70,7 +58,7 @@ RUN /usr/local/bin/python -m virtualenv /opt/envs/py310 --python="/opt/py310/bin
     && sed -i "s/include-system-site-packages = false/include-system-site-packages = true/" /opt/envs/py310/pyvenv.cfg \
     && source /opt/envs/py310/bin/activate \
     && pip install \
-        "satellite-weather-downloader >= 1.8.2" \
+        "satellite-weather-downloader >= 1.8.3" \
         psycopg2
 
 ENTRYPOINT [ "/entrypoint.sh" ]
