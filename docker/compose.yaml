@@ -32,12 +32,22 @@ x-airflow-common:
     AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
     AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
     AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+    #
     HOST_UID: ${HOST_UID}
     HOST_GID: ${HOST_GID}
+    # Episcsanner variables
+    AIRFLOW_PSQL_USER_MAIN: ${AIRFLOW_PSQL_USER_MAIN}
+    AIRFLOW_PSQL_PASSWORD_MAIN: ${AIRFLOW_PSQL_PASSWORD_MAIN}
+    AIRFLOW_PSQL_HOST_MAIN: ${AIRFLOW_PSQL_HOST_MAIN}
+    AIRFLOW_PSQL_PORT_MAIN: ${AIRFLOW_PSQL_PORT_MAIN}
+    AIRFLOW_PSQL_DB_MAIN: ${AIRFLOW_PSQL_DB_MAIN}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/dags:${AIRFLOW_HOME}/dags
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/logs:${AIRFLOW_HOME}/logs
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/plugins:${AIRFLOW_HOME}/plugins
+    #  Episcanner
+    - ${EPISCANNER_HOST_DATA}:${AIRFLOW_HOME}/episcanner_data
+
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
