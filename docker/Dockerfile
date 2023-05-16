@@ -81,5 +81,6 @@ RUN curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/M
     && /home/airflow/mambaforge/bin/mamba create -y -n episcanner-downloader python=3.11 poetry psycopg2 python-dotenv \
     && chown -R ${HOST_UID}:${HOST_GID} ${AIRFLOW_HOME}/ /home/airflow/mambaforge/
 
-RUN echo "alias episcanner='source /home/airflow/mambaforge/bin/activate episcanner-downloader'" >> /home/airflow/.bashrc
+RUN echo "alias activate_episcanner='source /home/airflow/mambaforge/bin/activate episcanner-downloader'" >> /home/airflow/.bashrc
+
 ENTRYPOINT [ "/entrypoint.sh" ]
