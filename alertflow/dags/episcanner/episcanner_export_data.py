@@ -49,6 +49,7 @@ with DAG(
     'EPISCANNER_DOWNLOADER',
     default_args=default_args,
     schedule_interval='0 3 * * 0',  # Every Sunday at 3 AM
+    catchup=False,
 ) as dag:
 
     # clone the repository from GitHub
@@ -82,7 +83,14 @@ with DAG(
         bash_command='source /home/airflow/mambaforge/bin/activate episcanner-downloader && '  # NOQA E501
         'cd /opt/airflow/episcanner-downloader &&'
         'python epi_scanner/downloader/export_data.py '
-        '-s AL -d dengue chikungunya -o /opt/airflow/episcanner_data',
+        '-s all -d dengue chikungunya -o /opt/airflow/episcanner_data',
+        dag=dag,
+    )
+
+    # Remove the episcanner-downloader repository
+    remove_repository = BashOperator(
+        task_id='remove_repository',
+        bash_command='rm -rf /opt/airflow/episcanner-downloader',
         dag=dag,
     )
 
@@ -91,4 +99,5 @@ with DAG(
         >> set_connection_variables
         >> install_episcanner
         >> episcanner_downloader
+        >> remove_repository
     )
