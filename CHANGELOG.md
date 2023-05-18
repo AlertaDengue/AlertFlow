@@ -1,6 +1,17 @@
 Release Notes
 ---
 
+## [1.2.0](https://github.com/AlertaDengue/AlertFlow/compare/1.1.2...1.2.0) (2023-05-18)
+
+
+### Features
+
+* Add conditional secrets export based on repository type ([b007445](https://github.com/AlertaDengue/AlertFlow/commit/b00744520b184966955b1212af66beac85ab691e))
+* **dags:** Add EPISCANNER_EXPORT_DATA DAG ([afc063b](https://github.com/AlertaDengue/AlertFlow/commit/afc063b527ba48da0fb75f6ae2412fce8ad7773a))
+* **docker:** Add user with passed UID/GID ([d149995](https://github.com/AlertaDengue/AlertFlow/commit/d1499954deb06e6c79aad25fb4385c95776d8ed3))
+* **docker:** Set host user and group IDs for Airflow container ([3ae36ed](https://github.com/AlertaDengue/AlertFlow/commit/3ae36edbf80a7290e66b9dc370437039e32de648))
+* Update Episcanner-Downloader DAG with Improved PSQL Connection and Schedule ([#25](https://github.com/AlertaDengue/AlertFlow/issues/25)) ([e9cbbf4](https://github.com/AlertaDengue/AlertFlow/commit/e9cbbf462118e68954b4e4b7b12b199524305e79))
+
 ## [1.1.2](https://github.com/AlertaDengue/AlertFlow/compare/1.1.1...1.1.2) (2023-04-13)
 
 
