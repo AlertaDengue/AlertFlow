@@ -15,11 +15,12 @@ env:
   HOST_GID: 1000
   _AIRFLOW_WWW_USER_USERNAME: ci
   _AIRFLOW_WWW_USER_PASSWORD: ci
-  # PSQL_USER_MAIN: ${{ secrets.CI_PSQL_USER }}
-  # PSQL_PASSWORD_MAIN: ${{ secrets.CI_PSQL_PASSWORD }}
-  # PSQL_HOST_MAIN: ${{ secrets.CI_PSQL_HOST }}
-  # PSQL_PORT_MAIN: ${{ secrets.CI_PSQL_PORT }}
-  # PSQL_DB_MAIN: ${{ secrets.CI_PSQL_DB }}
+  AIRFLOW_PSQL_USER_MAIN: ${{ secrets.CI_PSQL_USER }}
+  AIRFLOW_PSQL_PASSWORD_MAIN: ${{ secrets.CI_PSQL_PASSWORD }}
+  AIRFLOW_PSQL_HOST_MAIN: ${{ secrets.CI_PSQL_HOST }}
+  AIRFLOW_PSQL_PORT_MAIN: ${{ secrets.CI_PSQL_PORT }}
+  AIRFLOW_PSQL_DB_MAIN: ${{ secrets.CI_PSQL_DB }}
+  EPISCANNER_HOST_DATA: /home/runner/work/AlertFlow/AlertFlow/alertflow/episcanner-downloader/epi_scanner/data/
 
 jobs:
   main:
@@ -40,17 +41,17 @@ jobs:
     - name: Check if repository is a fork
       run: |
         if [[ "${{ github.event.repository.fork }}" == "true" ]]; then
-          export PSQL_USER_MAIN="${{ secrets.CI_PSQL_USER_FORK }}"
-          export PSQL_PASSWORD_MAIN="${{ secrets.CI_PSQL_PASSWORD_FORK }}"
-          export PSQL_HOST_MAIN="${{ secrets.CI_PSQL_HOST_FORK }}"
-          export PSQL_PORT_MAIN="${{ secrets.CI_PSQL_PORT_FORK }}"
-          export PSQL_DB_MAIN="${{ secrets.CI_PSQL_DB_FORK }}"
+          export AIRFLOW_PSQL_USER_MAIN="${{ secrets.CI_PSQL_USER_FORK }}"
+          export AIRFLOW_PSQL_PASSWORD_MAIN="${{ secrets.CI_PSQL_PASSWORD_FORK }}"
+          export AIRFLOW_PSQL_HOST_MAIN="${{ secrets.CI_PSQL_HOST_FORK }}"
+          export AIRFLOW_PSQL_PORT_MAIN="${{ secrets.CI_PSQL_PORT_FORK }}"
+          export AIRFLOW_PSQL_DB_MAIN="${{ secrets.CI_PSQL_DB_FORK }}"
         else
-          export PSQL_USER_MAIN="${{ secrets.CI_PSQL_USER }}"
-          export PSQL_PASSWORD_MAIN="${{ secrets.CI_PSQL_PASSWORD }}"
-          export PSQL_HOST_MAIN="${{ secrets.CI_PSQL_HOST }}"
-          export PSQL_PORT_MAIN="${{ secrets.CI_PSQL_PORT }}"
-          export PSQL_DB_MAIN="${{ secrets.CI_PSQL_DB }}"
+          export AIRFLOW_PSQL_USER_MAIN="${{ secrets.CI_PSQL_USER }}"
+          export AIRFLOW_PSQL_PASSWORD_MAIN="${{ secrets.CI_PSQL_PASSWORD }}"
+          export AIRFLOW_PSQL_HOST_MAIN="${{ secrets.CI_PSQL_HOST }}"
+          export AIRFLOW_PSQL_PORT_MAIN="${{ secrets.CI_PSQL_PORT }}"
+          export AIRFLOW_PSQL_DB_MAIN="${{ secrets.CI_PSQL_DB }}"
         fi
 
     - name: Semantic Release Title Check
