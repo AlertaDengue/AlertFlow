@@ -39,11 +39,11 @@ with DAG(
     dag_id='COPERNICUS_BRASIL',
     description='ETL of weather data for Brazil',
     tags=['Brasil', 'Copernicus'],
-    schedule='@monthly',
+    schedule='@daily',
     default_args=DEFAULT_ARGS,
-    start_date=pendulum.datetime(2015, 1, 16),
+    start_date=pendulum.datetime(2014, 1, 1),
     catchup=True,
-    max_active_runs=4,
+    max_active_runs=14,
 ):
     from airflow.models import Variable
 
@@ -57,7 +57,7 @@ with DAG(
     )
     def extract_transform_load(
         date: str, data_dir: str, api_key: str, psql_uri: str
-    ) -> None:
+    ) -> str:
         """
         Due to incompatibility issues between Airflow's Python version
         and the satellite-weather-downloader (SWD) package, this task
@@ -72,8 +72,8 @@ with DAG(
         Postgres DB, as specified in the .env file, in the form of a
         DataFrame containing the weather information.
         """
-        import calendar
-        from datetime import datetime
+        from datetime import timedelta
+        from itertools import chain
         from pathlib import Path
 
         from dateutil import parser
@@ -83,25 +83,26 @@ with DAG(
         from sqlalchemy import create_engine
 
         start_date = parser.parse(str(date))
-        # max_update_delay = start_date - timedelta(days=8)
+        max_update_delay = start_date - timedelta(days=8)
 
-        if start_date.month == 1:
-            ini_date = datetime(start_date.year - 1, 12, 1).date()
-        else:
-            ini_date = datetime(
-                start_date.year, start_date.month - 1, 1
-            ).date()
+        with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
+            cur = conn.execute(
+                'SELECT geocodigo FROM weather.copernicus_brasil'
+                f" WHERE date = '{str(max_update_delay.date())}'"
+            )
+            table_geocodes = set(chain(*cur.fetchall()))
 
-        end_date = datetime(
-            ini_date.year,
-            ini_date.month,
-            calendar.monthrange(ini_date.year, ini_date.month)[1],
-        ).date()
+        all_geocodes = set([mun['geocodigo'] for mun in MUNICIPIOS])
+        geocodes = all_geocodes.difference(table_geocodes)
+        print('TABLE_GEO ', f'[{len(table_geocodes)}]: ', table_geocodes)
+        print('DIFF_GEO: ', f'[{len(geocodes)}]: ', geocodes)
+
+        if not geocodes:
+            return 'There is no geocode to fetch'
 
         # Downloads daily dataset
         netcdf_file = sat_d.download_br_netcdf(
-            date=str(ini_date),
-            date_end=str(end_date),
+            date=str(max_update_delay.date()),
             data_dir=data_dir,
             user_key=api_key['CDSAPI_KEY'],
         )
@@ -110,50 +111,19 @@ with DAG(
 
         # Reads the NetCDF4 file using Xarray
         ds = sat_w.load_dataset(netcdf_file)
-        geocodes = [mun['geocodigo'] for mun in MUNICIPIOS]
 
-        def geocode_in_db(geocode: int) -> bool:
-            # Checks if date has been already inserted into DB
-            try:
-                with create_engine(
-                    psql_uri['PSQL_MAIN_URI']
-                ).connect() as conn:
-                    cur = conn.execute(
-                        'SELECT EXISTS ('
-                        ' SELECT FROM weather.copernicus_brasil'
-                        f" WHERE date = '{ini_date}' AND geocodigo = {geocode}"
-                        ')'
-                    )
-                    return cur.fetchone()[0]
-            except Exception as e:
-                if 'UndefinedTable' in str(e):
-                    # For dev purposes, in case table was not found
-                    print('First insertion')
-                    return False
-                else:
-                    raise e
-
-        for geocode in geocodes:
-            print(f'Handling {geocode}', flush=True)
-
-            if geocode_in_db(geocode):
-                print(f'{geocode} already in DB')
-                continue
-
-            try:
-                ds.copebr.to_sql(
-                    tablename='copernicus_brasil',
-                    schema='weather',
-                    geocodes=geocode,
-                    sql_uri=psql_uri['PSQL_MAIN_URI'],
-                )
-                print(f'{geocode} inserted into DB')
-            except Exception as e:
-                print(type(e))
-                continue
+        with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
+            ds.copebr.to_sql(
+                tablename='copernicus_brasil',
+                schema='weather',
+                geocodes=list(geocodes),
+                con=conn,
+            )
 
         # Deletes the NetCDF4 file
         Path(netcdf_file).unlink(missing_ok=True)
+
+        return f'{len(geocodes)} inserted into DB.'
 
     # Instantiate the Task
     ETL = extract_transform_load(DATE, DATA_DIR, KEY, URI)
