@@ -72,9 +72,9 @@ with DAG(
         Postgres DB, as specified in the .env file, in the form of a
         DataFrame containing the weather information.
         """
-        from pathlib import Path
         from datetime import timedelta
         from itertools import chain
+        from pathlib import Path
 
         from dateutil import parser
         from satellite import downloader as sat_d
@@ -87,15 +87,15 @@ with DAG(
 
         with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
             cur = conn.execute(
-                "SELECT geocodigo FROM weather.copernicus_brasil"
+                'SELECT geocodigo FROM weather.copernicus_brasil'
                 f" WHERE date = '{str(max_update_delay.date())}'"
             )
             table_geocodes = set(chain(*cur.fetchall()))
 
         all_geocodes = set([mun['geocodigo'] for mun in MUNICIPIOS])
         geocodes = all_geocodes.difference(table_geocodes)
-        print("TABLE_GEO ", f'[{len(table_geocodes)}]: ', table_geocodes)
-        print("DIFF_GEO: ", f'[{len(geocodes)}]: ', geocodes)
+        print('TABLE_GEO ', f'[{len(table_geocodes)}]: ', table_geocodes)
+        print('DIFF_GEO: ', f'[{len(geocodes)}]: ', geocodes)
 
         if not geocodes:
             return 'There is no geocode to fetch'
