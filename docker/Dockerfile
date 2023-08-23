@@ -1,4 +1,4 @@
-FROM apache/airflow:2.5.3
+FROM apache/airflow:2.6.3
 
 LABEL maintainer="Luã Bida Vacaro <luabidaa@gmail.com>"
 LABEL org.opencontainers.image.title="AlertFlow"
