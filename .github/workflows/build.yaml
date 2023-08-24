@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 env:
-  BASE_URL_HOST=localhost:8081
-  ENABLE_PROXY_FIX=False
+  BASE_URL_HOST: alertflow_webserver:8081
+  ENABLE_PROXY_FIX: False
   AIRFLOW_PROJ_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
   AIRFLOW_HOME: /opt/airflow
   AIRFLOW_PORT: 8081
