@@ -1,4 +1,4 @@
-FROM apache/airflow:2.5.3
+FROM apache/airflow:2.6.3
 
 LABEL maintainer="Luã Bida Vacaro <luabidaa@gmail.com>"
 LABEL org.opencontainers.image.title="AlertFlow"
@@ -73,14 +73,5 @@ RUN /usr/local/bin/python -m virtualenv /opt/envs/py310 --python="/opt/py310/bin
     && pip install \
         "satellite-weather-downloader >= 1.8.4" \
         psycopg2
-
-# Install conda and create environment
-RUN curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh \
-    && bash Mambaforge-Linux-x86_64.sh -b -p /home/airflow/mambaforge \
-    && rm Mambaforge-Linux-x86_64.sh \
-    && /home/airflow/mambaforge/bin/mamba create -y -n episcanner-downloader python=3.11 poetry psycopg2 python-dotenv \
-    && chown -R ${HOST_UID}:${HOST_GID} ${AIRFLOW_HOME}/ /home/airflow/mambaforge/
-
-RUN echo "alias activate_episcanner='source /home/airflow/mambaforge/bin/activate episcanner-downloader'" >> /home/airflow/.bashrc
 
 ENTRYPOINT [ "/entrypoint.sh" ]

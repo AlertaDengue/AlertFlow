@@ -41,7 +41,7 @@ with DAG(
     tags=['Brasil', 'Copernicus'],
     schedule='@daily',
     default_args=DEFAULT_ARGS,
-    start_date=pendulum.datetime(2014, 1, 1),
+    start_date=pendulum.datetime(2023, 8, 1),
     catchup=True,
     max_active_runs=14,
 ):
