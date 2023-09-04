@@ -4,7 +4,7 @@ Email: luabidaa@gmail.com
 Github: https://github.com/luabida
 Date: 2023-09-04
 
-The COPERNICUS_SANTOS Airflow DAG will retrieve weekly weather data
+The COPERNICUS_SANTOS Airflow DAG will retrieve daily weather data
 for the Brazilian city of Santos, SP by accessing the Copernicus
 ERA5 Reanalysis dataset. This climate information includes temperature,
 precipitation, humidity, and atmospheric pressure, which is collected
@@ -41,17 +41,17 @@ with DAG(
     dag_id='COPERNICUS_SANTOS',
     description='ETL of weather data for Santos, SP - BR',
     tags=['Brasil', 'Copernicus', 'Santos'],
-    schedule='@weekly',
+    schedule='@daily',
     default_args=DEFAULT_ARGS,
-    start_date=pendulum.datetime(2000, 1, 9),
-    catchup=False,
+    start_date=pendulum.datetime(2018, 1, 9),
+    catchup=True,
     max_active_runs=15,
 ):
 
     DATE = '{{ ds }}'   # DAG execution date
 
     @task.external_python(
-        task_id='weekly_fetch', python='/opt/py310/bin/python3.10'
+        task_id='daily_fetch', python='/opt/py310/bin/python3.10'
     )
     def extract_transform_load(
         date: str, data_dir: str, api_key: str, psql_uri: str
@@ -65,13 +65,12 @@ with DAG(
         and XCom sharing between tasks is not allowed.
 
         The task is designed to receive the execution date and download
-        the weather dataset for that specific week range. After downloading,
+        the weather dataset for that specific day. After downloading,
         the data is transformed using Xarray and inserted into the Main
         Postgres DB, as specified in the .env file, in the form of a
         DataFrame containing the weather information.
         """
         from datetime import datetime, timedelta
-        from itertools import chain
         from pathlib import Path
 
         from dateutil import parser
@@ -79,14 +78,17 @@ with DAG(
         from satellite import weather as sat_w
         from sqlalchemy import create_engine
 
+        exec_date = parser.parse(str(date)).date()
+        max_update_delay = exec_date - timedelta(days=9)
+
         try:
             # Check if date has been already inserted
             with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
                 cur = conn.execute(
-                    'SELECT DISTINCT(datetime::DATE) '
-                    'FROM weather.copernicus_santos_sp'
+                    'SELECT geocodigo FROM weather.copernicus_santos_sp'
+                    f" WHERE date = '{str(max_update_delay)}'"
                 )
-                dates = list(chain(*cur.all()))
+                inserted = any(cur.fetchall())
         except Exception as e:
             if 'UndefinedTable' in str(e):
                 print('First insertion')
@@ -94,25 +96,19 @@ with DAG(
             else:
                 raise e
 
-        exec_date = parser.parse(str(date)).date()
-        max_update_delay = exec_date - timedelta(days=9)
-        start_date = max_update_delay - timedelta(days=7)
+        if inserted:
+            return f"Data for {date} has been fetched already"
 
         def format_date(dt: datetime):
             return dt.strftime('%F')
 
-        if str(format_date(start_date)) in list(map(format_date, dates)):
-            print(f'[INFO] {date} has been fetched already.')
-            return None
-
         # Downloads the NetCDF4 dataset
         netcdf_file = sat_d.download_netcdf(
-            date=str(start_date),
-            date_end=str(max_update_delay),
+            date=str(max_update_delay),
             data_dir=data_dir,
             area={"N": -23.75, "W": -46.5, "S": -24.25, "E": -46.0},
             user_key=api_key['CDSAPI_KEY'],
-            filename=f"santos_{str(date)}_{str(max_update_delay)}"
+            filename=f"santos_{str(max_update_delay)}"
         )
         filepath = Path(data_dir) / netcdf_file
 
