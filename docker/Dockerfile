@@ -71,7 +71,7 @@ RUN /usr/local/bin/python -m virtualenv /opt/envs/py310 --python="/opt/py310/bin
     && sed -i "s/include-system-site-packages = false/include-system-site-packages = true/" /opt/envs/py310/pyvenv.cfg \
     && source /opt/envs/py310/bin/activate \
     && pip install \
-        "satellite-weather-downloader >= 1.8.4" \
+        "satellite-weather-downloader >= 1.9.1" \
         psycopg2
 
 # Install conda and create environment
