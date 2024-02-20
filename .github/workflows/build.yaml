@@ -87,6 +87,10 @@ jobs:
       run: |
         make linter
 
+    - name: Create Docker network
+      run: |
+        docker network create infodengue-dev_infodengue
+
     - name: Build Base Image
       run: |
         sugar build
