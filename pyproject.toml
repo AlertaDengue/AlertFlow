@@ -8,11 +8,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4"
 containers-sugar = "^1.11.1"
+compose-go = "^2.24.6"
 
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"
 black = "^24.2.0"
+isort = "^5.13.2"
 
 [build-system]
 requires = ["poetry-core"]
