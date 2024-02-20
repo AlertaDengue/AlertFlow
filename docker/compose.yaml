@@ -55,6 +55,8 @@ x-airflow-common:
       condition: service_healthy
     postgres:
       condition: service_healthy
+  networks:
+    - alertflow
 
 services:
   postgres:
@@ -73,6 +75,8 @@ services:
       retries: 5
       start_period: 5s
     restart: always
+    networks:
+      - alertflow
 
   redis:
     image: redis:latest
@@ -87,6 +91,8 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    networks:
+      - alertflow
 
   webserver:
     <<: *airflow-common
@@ -227,6 +233,12 @@ services:
       <<: *airflow-common-depends-on
       startup:
         condition: service_completed_successfully
+    networks:
+      - alertflow
 
 volumes:
   postgres-db-volume:
+
+networks:
+  alertflow:
+    driver: bridge

@@ -7,6 +7,7 @@ on:
     branches: [ main ]
 
 env:
+  ENV: dev
   AIRFLOW_PROJ_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
   AIRFLOW_HOME: /opt/airflow
   AIRFLOW_PORT: 8081
@@ -80,11 +81,11 @@ jobs:
 
     - name: Build Base Image
       run: |
-        make containers-build
+        sugar build
 
     - name: Start Airflow
       run: |
-        make containers-start
+        sugar up --options -d
 
     - name: Wait Containers
       run: |
