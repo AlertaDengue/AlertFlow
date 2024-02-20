@@ -6,9 +6,9 @@ repos:
 
   - repo: local
     hooks:
-    - entry: blue
-      id: blue
-      name: blue
+    - entry: black
+      id: black
+      name: black
       exclude: |
         (?x)(
           docs
