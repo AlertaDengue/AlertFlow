@@ -42,7 +42,8 @@ with DAG(
     schedule='@daily',
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2014, 1, 1),
-    catchup=True,
+    # catchup=True,
+    catchup=False,
     max_active_runs=14,
 ):
     from airflow.models import Variable
@@ -79,7 +80,7 @@ with DAG(
         from dateutil import parser
         from satellite import downloader as sat_d
         from satellite import weather as sat_w
-        from satellite.weather._brazil.extract_latlons import MUNICIPIOS
+        from satellite.weather.brazil.extract_latlons import MUNICIPALITIES
         from sqlalchemy import create_engine
 
         start_date = parser.parse(str(date))
@@ -92,7 +93,7 @@ with DAG(
             )
             table_geocodes = set(chain(*cur.fetchall()))
 
-        all_geocodes = set([mun['geocodigo'] for mun in MUNICIPIOS])
+        all_geocodes = set([mun['geocodigo'] for mun in MUNICIPALITIES])
         geocodes = all_geocodes.difference(table_geocodes)
         print('TABLE_GEO ', f'[{len(table_geocodes)}]: ', table_geocodes)
         print('DIFF_GEO: ', f'[{len(geocodes)}]: ', geocodes)

@@ -230,3 +230,7 @@ services:
 
 volumes:
   postgres-db-volume:
+
+networks:
+  infodengue-dev_infodengue:
+    external: true
