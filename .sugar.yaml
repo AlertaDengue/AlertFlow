@@ -9,6 +9,7 @@ groups:
     project-name: alertflow
     compose-path:
       - docker/compose.yaml
+      - docker/compose-dev.yaml
     env-file: .env
     services:
       default: scheduler,triggerer,webserver,worker
@@ -20,7 +21,9 @@ groups:
 
   prod:
     project-name: alertflow
-    compose-path: docker/compose.yaml
+    compose-path: 
+      - docker/compose.yaml
+      - docker/compose-prod.yaml
     env-file: .env
     services:
       default: scheduler,triggerer,webserver,worker

@@ -55,8 +55,6 @@ x-airflow-common:
       condition: service_healthy
     postgres:
       condition: service_healthy
-  networks:
-    - alertflow
 
 services:
   postgres:
@@ -113,6 +111,8 @@ services:
       <<: *airflow-common-depends-on
       startup:
         condition: service_completed_successfully
+    networks:
+      - alertflow
 
   scheduler:
     <<: *airflow-common
@@ -131,6 +131,8 @@ services:
       <<: *airflow-common-depends-on
       startup:
         condition: service_completed_successfully
+    networks:
+      - alertflow
 
   worker:
     <<: *airflow-common
@@ -156,6 +158,8 @@ services:
       <<: *airflow-common-depends-on
       startup:
         condition: service_completed_successfully
+    networks:
+      - alertflow
 
   triggerer:
     <<: *airflow-common
@@ -174,6 +178,8 @@ services:
       <<: *airflow-common-depends-on
       startup:
         condition: service_completed_successfully
+    networks:
+      - alertflow
 
   startup:
     <<: *airflow-common
@@ -198,6 +204,8 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}/alertflow:/sources
+    networks:
+      - alertflow
 
   cli:
     <<: *airflow-common
@@ -211,6 +219,8 @@ services:
       - bash
       - -c
       - airflow
+    networks:
+      - alertflow
 
   flower:
     <<: *airflow-common

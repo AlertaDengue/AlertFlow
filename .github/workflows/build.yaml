@@ -38,6 +38,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 20.11.0
+
     # Check if the repository is a fork
     - name: Check if repository is a fork
       run: |
@@ -74,6 +78,10 @@ jobs:
     - name: Create environment variables file
       run: |
         envsubst < env.tpl > .env
+
+    - name: Install dependencies
+      run: |
+        poetry install
 
     - name: Lint All Files
       run: |
