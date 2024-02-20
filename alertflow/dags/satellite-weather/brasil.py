@@ -43,8 +43,7 @@ with DAG(
     schedule="@daily",
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2014, 1, 1),
-    # catchup=True,
-    catchup=False,
+    catchup=True,
     max_active_runs=14,
 ):
     from airflow.models import Variable
@@ -88,7 +87,7 @@ with DAG(
         from sqlalchemy import create_engine
 
         start_date = parser.parse(str(date))
-        max_update_delay = start_date - timedelta(days=8)
+        max_update_delay = start_date - timedelta(days=6)
 
         with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
             cur = conn.execute(

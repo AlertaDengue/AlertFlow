@@ -99,7 +99,7 @@ with DAG(
                 raise e
 
         exec_date = parser.parse(str(date)).date()
-        max_update_delay = exec_date - timedelta(days=9)
+        max_update_delay = exec_date - timedelta(days=6)
         start_date = max_update_delay - timedelta(days=7)
 
         def format_date(dt: datetime):
