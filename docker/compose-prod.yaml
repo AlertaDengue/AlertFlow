@@ -1,0 +1,8 @@
+services:
+  worker:  
+    networks:
+        - infodengue-prod_infodengue
+
+networks:
+  infodengue-prod_infodengue:
+    external: true
