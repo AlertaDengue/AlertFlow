@@ -1,0 +1,16 @@
+services:
+  worker:  
+    networks:
+        - infodengue-prod_infodengue
+
+  scheduler:  
+    networks:
+        - infodengue-prod_infodengue
+
+  webserver:  
+    networks:
+        - infodengue-prod_infodengue
+
+networks:
+  infodengue-prod_infodengue:
+    external: true

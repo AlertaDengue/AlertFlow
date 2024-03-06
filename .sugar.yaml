@@ -1,0 +1,34 @@
+version: 1.0.0
+compose-app: docker-compose
+env-file: .env
+defaults:
+  group: {{ env.ENV }}
+
+groups:
+  dev:
+    project-name: alertflow
+    compose-path:
+      - docker/compose.yaml
+      - docker/compose-dev.yaml
+    env-file: .env
+    services:
+      default: scheduler,triggerer,webserver,worker
+      available:
+        - name: scheduler
+        - name: triggerer
+        - name: webserver
+        - name: worker
+
+  prod:
+    project-name: alertflow
+    compose-path: 
+      - docker/compose.yaml
+      - docker/compose-prod.yaml
+    env-file: .env
+    services:
+      default: scheduler,triggerer,webserver,worker
+      available:
+        - name: scheduler
+        - name: triggerer
+        - name: webserver
+        - name: worker

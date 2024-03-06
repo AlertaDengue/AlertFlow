@@ -7,6 +7,7 @@ on:
     branches: [ main ]
 
 env:
+  ENV: dev
   AIRFLOW_PROJ_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
   AIRFLOW_HOME: /opt/airflow
   AIRFLOW_PORT: 8081
@@ -36,6 +37,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 20.11.0
 
     # Check if the repository is a fork
     - name: Check if repository is a fork
@@ -74,22 +79,30 @@ jobs:
       run: |
         envsubst < env.tpl > .env
 
+    - name: Install dependencies
+      run: |
+        poetry install
+
     - name: Lint All Files
       run: |
         make linter
 
+    - name: Create Docker network
+      run: |
+        docker network create infodengue-dev_infodengue
+
     - name: Build Base Image
       run: |
-        make containers-build
+        sugar build
 
     - name: Start Airflow
       run: |
-        make containers-start
+        sugar up --options -d
 
     - name: Wait Containers
       run: |
         make containers-wait-all
 
-    - name: Setup tmate session
-      if: "${{ failure() }}"
-      uses: mxschmitt/action-tmate@v3
+    # - name: Setup tmate session
+    #   if: "${{ failure() }}"
+    #   uses: mxschmitt/action-tmate@v3

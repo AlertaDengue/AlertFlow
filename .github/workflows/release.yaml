@@ -25,7 +25,7 @@ jobs:
 
     - uses: actions/setup-node@v3
       with:
-        node-version: 18
+        node-version: 20.11.0
 
     - name: Test release
       if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -41,7 +41,7 @@ jobs:
           -p "@semantic-release/exec" \
           -p "@semantic-release/github" \
           -p "@semantic-release/git" \
-          -p "@google/semantic-release-replace-plugin" \
+          -p "semantic-release-replace-plugin" \
           semantic-release --verbose --dry-run
 
     - name: Release
@@ -58,5 +58,5 @@ jobs:
           -p "@semantic-release/exec" \
           -p "@semantic-release/github" \
           -p "@semantic-release/git" \
-          -p "@google/semantic-release-replace-plugin" \
+          -p "semantic-release-replace-plugin" \
           semantic-release --ci

@@ -13,6 +13,7 @@ measures, the DAG is programmed to have a 9-day delay from the current
 date, considering that the Copernicus API typically takes an average
 of 7 days to update the dataset.
 """
+
 import os
 from datetime import timedelta
 
@@ -22,37 +23,40 @@ from airflow.decorators import task
 from airflow.models import Variable
 
 DEFAULT_ARGS = {
-    'owner': 'AlertaDengue',
-    'depends_on_past': False,
+    "owner": "AlertaDengue",
+    "depends_on_past": False,
     # 'email': [email_main],
-    'email_on_failure': True,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=2),
+    "email_on_failure": True,
+    "email_on_retry": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=2),
 }
 
 env = os.getenv
-email_main = env('EMAIL_MAIN')
-DATA_DIR = '/tmp/copernicus'
-KEY = Variable.get('cdsapi_key', deserialize_json=True)
-URI = Variable.get('psql_main_uri', deserialize_json=True)
+email_main = env("EMAIL_MAIN")
+DATA_DIR = "/tmp/copernicus"
+KEY = Variable.get("cdsapi_key", deserialize_json=True)
+URI = Variable.get("psql_main_uri", deserialize_json=True)
 
 with DAG(
-    dag_id='COPERNICUS_FOZ',
-    description='ETL of weather data for Foz do Iguaçu - BR',
-    tags=['Brasil', 'Copernicus', 'Foz do Iguaçu'],
-    schedule='@weekly',
+    dag_id="COPERNICUS_FOZ",
+    description="ETL of weather data for Foz do Iguaçu - BR",
+    tags=["Brasil", "Copernicus", "Foz do Iguaçu"],
+    schedule="@weekly",
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 9),
     catchup=True,
     max_active_runs=15,
 ):
 
-    DATE = '{{ ds }}'   # DAG execution date
+    DATE = "{{ ds }}"  # DAG execution date
 
+    # fmt: off
     @task.external_python(
-        task_id='weekly_fetch', python='/opt/py310/bin/python3.10'
+        task_id="weekly_fetch",
+        python="/opt/py310/bin/python3.10"
     )
+    # fmt: on
     def extract_transform_load(
         date: str, data_dir: str, api_key: str, psql_uri: str
     ) -> None:
@@ -81,28 +85,28 @@ with DAG(
 
         try:
             # Check if date has been already inserted
-            with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
+            with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
                 cur = conn.execute(
-                    'SELECT DISTINCT(datetime::DATE) '
-                    'FROM weather.copernicus_foz_do_iguacu'
+                    "SELECT DISTINCT(datetime::DATE) "
+                    "FROM weather.copernicus_foz_do_iguacu"
                 )
                 dates = list(chain(*cur.all()))
         except Exception as e:
-            if 'UndefinedTable' in str(e):
-                print('First insertion')
+            if "UndefinedTable" in str(e):
+                print("First insertion")
                 dates = []
             else:
                 raise e
 
         exec_date = parser.parse(str(date)).date()
-        max_update_delay = exec_date - timedelta(days=9)
+        max_update_delay = exec_date - timedelta(days=6)
         start_date = max_update_delay - timedelta(days=7)
 
         def format_date(dt: datetime):
-            return dt.strftime('%F')
+            return dt.strftime("%F")
 
         if str(format_date(start_date)) in list(map(format_date, dates)):
-            print(f'[INFO] {date} has been fetched already.')
+            print(f"[INFO] {date} has been fetched already.")
             return None
 
         # Downloads the NetCDF4 dataset
@@ -110,7 +114,7 @@ with DAG(
             date=str(start_date),
             date_end=str(max_update_delay),
             data_dir=data_dir,
-            user_key=api_key['CDSAPI_KEY'],
+            user_key=api_key["CDSAPI_KEY"],
         )
         filepath = Path(data_dir) / netcdf_file
 
@@ -121,15 +125,15 @@ with DAG(
         df = ds.copebr.to_dataframe(4108304, raw=True)
 
         # Insert the DataFrame into DB
-        with create_engine(psql_uri['PSQL_MAIN_URI']).connect() as conn:
+        with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
             df.to_sql(
-                name='copernicus_foz_do_iguacu',
+                name="copernicus_foz_do_iguacu",
                 index=False,
-                schema='weather',
+                schema="weather",
                 con=conn,
-                if_exists='append',
+                if_exists="append",
             )
-        print(f'{filepath} inserted into weather.copernicus_foz_do_iguacu')
+        print(f"{filepath} inserted into weather.copernicus_foz_do_iguacu")
 
         # Deletes the dataset
         Path(filepath).unlink(missing_ok=True)
@@ -137,4 +141,4 @@ with DAG(
     # Instantiate the Task
     ETL = extract_transform_load(DATE, DATA_DIR, KEY, URI)
 
-    ETL   # Execute
+    ETL  # Execute

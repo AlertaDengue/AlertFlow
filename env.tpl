@@ -1,3 +1,5 @@
+ENV=${ENV:-dev}
+
 # Core
 AIRFLOW_PROJ_DIR=${AIRFLOW_PROJ_DIR:-.}
 AIRFLOW_HOME=${AIRFLOW_HOME:-/opt/airflow}
