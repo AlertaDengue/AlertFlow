@@ -84,16 +84,16 @@ with DAG(
         from satellite import downloader as sat_d
         from satellite import weather as sat_w
         from satellite.weather.brazil.extract_latlons import MUNICIPALITIES
-        from sqlalchemy import create_engine
+        from sqlalchemy import create_engine, text
 
         start_date = parser.parse(str(date))
         max_update_delay = start_date - timedelta(days=6)
 
         with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
-            cur = conn.execute(
+            cur = conn.execute(text(
                 "SELECT geocodigo FROM weather.copernicus_brasil"
                 f" WHERE date = '{str(max_update_delay.date())}'"
-            )
+            ))
             table_geocodes = set(chain(*cur.fetchall()))
 
         all_geocodes = set([mun["geocodigo"] for mun in MUNICIPALITIES])
@@ -116,17 +116,13 @@ with DAG(
         # Reads the NetCDF4 file using Xarray
         ds = sat_w.load_dataset(netcdf_file)
 
-        try:
-            conn = create_engine(psql_uri["PSQL_MAIN_URI"]).raw_connection()
-
+        with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
             ds.copebr.to_sql(
                 tablename="copernicus_brasil",
                 schema="weather",
                 geocodes=list(geocodes),
                 con=conn,
             )
-        finally:
-            conn.close()
 
         # Deletes the NetCDF4 file
         Path(netcdf_file).unlink(missing_ok=True)
