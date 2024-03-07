@@ -116,13 +116,17 @@ with DAG(
         # Reads the NetCDF4 file using Xarray
         ds = sat_w.load_dataset(netcdf_file)
 
-        with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
+        try:
+            conn = create_engine(psql_uri["PSQL_MAIN_URI"]).raw_connection()
+
             ds.copebr.to_sql(
                 tablename="copernicus_brasil",
                 schema="weather",
                 geocodes=list(geocodes),
                 con=conn,
             )
+        finally:
+            conn.close()
 
         # Deletes the NetCDF4 file
         Path(netcdf_file).unlink(missing_ok=True)
