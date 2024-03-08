@@ -79,7 +79,7 @@ RUN source /home/airflow/mambaforge/bin/activate \
   && sed -i "s/include-system-site-packages = false/include-system-site-packages = true/" /opt/envs/py310/pyvenv.cfg \
   && source /opt/envs/py310/bin/activate \
   && pip install \
-  "satellite-weather-downloader >= 1.9.3" \
+  "satellite-weather-downloader >= 1.9.4" \
   psycopg2
 
 RUN echo "alias activate_episcanner='source /home/airflow/mambaforge/bin/activate episcanner-downloader'" >> /home/airflow/.bashrc
