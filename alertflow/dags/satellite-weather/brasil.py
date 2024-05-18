@@ -42,7 +42,7 @@ with DAG(
     tags=["Brasil", "Copernicus"],
     schedule="@daily",
     default_args=DEFAULT_ARGS,
-    start_date=pendulum.datetime(2014, 1, 1),
+    start_date=pendulum.datetime(2024, 1, 1),
     catchup=True,
     max_active_runs=14,
 ):
@@ -90,10 +90,12 @@ with DAG(
         max_update_delay = start_date - timedelta(days=6)
 
         with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
-            cur = conn.execute(text(
-                "SELECT geocodigo FROM weather.copernicus_brasil"
-                f" WHERE date = '{str(max_update_delay.date())}'"
-            ))
+            cur = conn.execute(
+                text(
+                    "SELECT geocodigo FROM weather.copernicus_brasil"
+                    f" WHERE date = '{str(max_update_delay.date())}'"
+                )
+            )
             table_geocodes = set(chain(*cur.fetchall()))
 
         all_geocodes = set([mun["geocodigo"] for mun in MUNICIPALITIES])
