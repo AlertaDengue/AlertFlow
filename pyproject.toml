@@ -6,7 +6,7 @@ authors = ["Luã Bida Vacaro <luabidaa@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4"
+python = ">=3.10,<3.12"
 containers-sugar = "^1.11.1"
 compose-go = "^2.24.6"
 
