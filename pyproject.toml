@@ -6,8 +6,8 @@ authors = ["Luã Bida Vacaro <luabidaa@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4"
-satellite-weather-downloader = {git = "https://github.com/luabida/satellite-weather-downloader", rev = "argentina-0.0.1"}
+python = ">=3.10,<3.13"
+satellite-weather-downloader = {git = "https://github.com/osl-incubator/satellite-weather-downloader"}
 sqlalchemy = "<2.0"
 
 
@@ -15,8 +15,9 @@ sqlalchemy = "<2.0"
 flake8 = "^7.0.0"
 black = "^24.2.0"
 isort = "^5.13.2"
-containers-sugar = "^1.11.1"
+containers-sugar = "1.11.1"
 compose-go = "^2.24.6"
+apache-airflow = "^2.10.2"
 
 [build-system]
 requires = ["poetry-core"]

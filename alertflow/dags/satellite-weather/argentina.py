@@ -4,9 +4,9 @@ Email: luabidaa@gmail.com
 Github: https://github.com/luabida
 Date: 2023-04-13
 
-The COPERNICUS_BRASIL Airflow DAG will collect daily weather
-data from the Copernicus ERA5 Reanalysis dataset for all 5570
-cities in Brazil. This data includes temperature, precipitation,
+The COPERNICUS_ARG Airflow DAG will collect daily weather
+data from the Copernicus ERA5 Land Reanalysis dataset for all
+cities in Argentina. This data includes temperature, precipitation,
 humidity, and atmospheric pressure, which is collected daily
 starting from January 1st, 2000 to the present day.
 
@@ -44,9 +44,9 @@ DEFAULT_ARGS = {
 
 
 with DAG(
-    dag_id="COPERNICUS_BRASIL",
+    dag_id="COPERNICUS_ARG",
     description="ETL of weather data for Brazil",
-    tags=["Brasil", "Copernicus"],
+    tags=["Argentina", "Copernicus"],
     schedule="@monthly",
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 1),
@@ -60,10 +60,10 @@ with DAG(
 
     @task
     def fetch_ds(dt, uri, api_key):
-        locale = "BRA"
+        locale = "ARG"
         tablename = f"copernicus_{locale.lower()}"
         engine = create_engine(uri)
-        dt = date.fromisoformat(dt) # - timedelta(days=5)
+        dt = date.fromisoformat(dt)
         end_day = calendar.monthrange(dt.year, dt.month)[1]
         date_str = f"{dt.replace(day=1)}/{dt.replace(day=end_day)}"
         # with engine.connect() as conn:
