@@ -16,11 +16,15 @@ around 7 days to update the dataset.
 """
 
 import os
-from datetime import timedelta
+from datetime import date, timedelta
+from itertools import chain
 
 import pendulum
 from airflow import DAG
 from airflow.decorators import task
+from airflow.models import Variable
+from satellite import ADM2, request
+from sqlalchemy import create_engine, text
 
 env = os.getenv
 email_main = env("EMAIL_MAIN")
@@ -40,98 +44,45 @@ with DAG(
     dag_id="COPERNICUS_BRASIL",
     description="ETL of weather data for Brazil",
     tags=["Brasil", "Copernicus"],
-    schedule="@daily",
+    schedule="@monthly",
     default_args=DEFAULT_ARGS,
-    start_date=pendulum.datetime(2024, 1, 1),
+    start_date=pendulum.datetime(2000, 1, 1),
+    end_date=pendulum.datetime(2024, 1, 1),
     catchup=True,
     max_active_runs=14,
-):
-    from airflow.models import Variable
-
+) as dag:
     DATE = "{{ ds }}"  # DAG execution date
-    DATA_DIR = "/tmp/copernicus"
     KEY = Variable.get("cdsapi_key", deserialize_json=True)
     URI = Variable.get("psql_main_uri", deserialize_json=True)
 
-    # fmt: off
-    @task.external_python(
-        task_id="daily_fetch",
-        python="/opt/py310/bin/python3.10"
-    )
-    # fmt: on
-    def extract_transform_load(
-        date: str, data_dir: str, api_key: str, psql_uri: str
-    ) -> str:
-        """
-        Due to incompatibility issues between Airflow's Python version
-        and the satellite-weather-downloader (SWD) package, this task
-        will be executed in a dedicated virtual environment, which
-        includes a pre-installed Python3.10 interpreter within the
-        container. All imports must be within the scope of the task,
-        and XCom sharing between tasks is not allowed.
+    @task
+    def fetch_ds(locale, dt, uri, api_key):
+        tablename = f"copernicus_{locale.lower()}"
+        engine = create_engine(uri)
+        dt = date.fromisoformat(dt) - timedelta(days=5)
 
-        The task is designed to receive the execution date and download
-        the weather dataset for that specific day. After downloading,
-        the data is transformed using Xarray and inserted into the Main
-        Postgres DB, as specified in the .env file, in the form of a
-        DataFrame containing the weather information.
-        """
-        from datetime import timedelta
-        from itertools import chain
-        from pathlib import Path
-
-        from dateutil import parser
-        from satellite import downloader as sat_d
-        from satellite import weather as sat_w
-        from satellite.weather.brazil.extract_latlons import MUNICIPALITIES
-        from sqlalchemy import create_engine, text
-
-        start_date = parser.parse(str(date))
-        max_update_delay = start_date - timedelta(days=6)
-
-        with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
+        with engine.connect() as conn:
             cur = conn.execute(
                 text(
-                    "SELECT geocodigo FROM weather.copernicus_brasil"
-                    f" WHERE date = '{str(max_update_delay.date())}'"
+                    f"SELECT geocode FROM weather.{tablename}"
+                    f" WHERE date = '{str(dt)}'"
                 )
             )
             table_geocodes = set(chain(*cur.fetchall()))
 
-        all_geocodes = set([mun["geocodigo"] for mun in MUNICIPALITIES])
+        all_geocodes = set([adm.code for adm in ADM2.filter(adm0=locale)])
         geocodes = all_geocodes.difference(table_geocodes)
         print("TABLE_GEO ", f"[{len(table_geocodes)}]: ", table_geocodes)
         print("DIFF_GEO: ", f"[{len(geocodes)}]: ", geocodes)
 
-        if not geocodes:
-            return "There is no geocode to fetch"
+        with request.reanalysis_era5_land(
+            str(dt).replace("-", "_") + locale,
+            api_token=api_key,
+            date=str(dt),
+            locale=locale,
+        ) as ds:
+            for adm in ADM2.filter(adm0=locale):
+                with engine.connect() as conn:
+                    ds.cope.to_sql(adm, conn, tablename, "weather")
 
-        # Downloads daily dataset
-        netcdf_file = sat_d.download_br_netcdf(
-            date=str(max_update_delay.date()),
-            data_dir=data_dir,
-            user_key=api_key["CDSAPI_KEY"],
-        )
-
-        print(f"Handling {netcdf_file}")
-
-        # Reads the NetCDF4 file using Xarray
-        ds = sat_w.load_dataset(netcdf_file)
-
-        with create_engine(psql_uri["PSQL_MAIN_URI"]).connect() as conn:
-            ds.copebr.to_sql(
-                tablename="copernicus_brasil",
-                schema="weather",
-                geocodes=list(geocodes),
-                con=conn,
-            )
-
-        # Deletes the NetCDF4 file
-        Path(netcdf_file).unlink(missing_ok=True)
-
-        return f"{len(geocodes)} inserted into DB."
-
-    # Instantiate the Task
-    ETL = extract_transform_load(DATE, DATA_DIR, KEY, URI)
-
-    ETL  # Execute
+    fetch_ds("BRA", DATE, URI["PSQL_MAIN_URI"], KEY["CDSAPI_KEY"])

@@ -32,29 +32,13 @@ x-airflow-common:
     AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
     AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
     AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
-    #
     HOST_UID: ${HOST_UID}
     HOST_GID: ${HOST_GID}
-    # Episcsanner variables
-    AIRFLOW_PSQL_USER_MAIN: ${AIRFLOW_PSQL_USER_MAIN}
-    AIRFLOW_PSQL_PASSWORD_MAIN: ${AIRFLOW_PSQL_PASSWORD_MAIN}
-    AIRFLOW_PSQL_HOST_MAIN: ${AIRFLOW_PSQL_HOST_MAIN}
-    AIRFLOW_PSQL_PORT_MAIN: ${AIRFLOW_PSQL_PORT_MAIN}
-    AIRFLOW_PSQL_DB_MAIN: ${AIRFLOW_PSQL_DB_MAIN}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/dags:${AIRFLOW_HOME}/dags
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/logs:${AIRFLOW_HOME}/logs
     - ${AIRFLOW_PROJ_DIR:-.}/alertflow/plugins:${AIRFLOW_HOME}/plugins
-    #  Episcanner
-    - ${EPISCANNER_HOST_DATA}:${AIRFLOW_HOME}/episcanner_data
-
   user: "${AIRFLOW_UID:-50000}:0"
-  depends_on:
-    &airflow-common-depends-on
-    redis:
-      condition: service_healthy
-    postgres:
-      condition: service_healthy
 
 services:
   postgres:
@@ -92,6 +76,38 @@ services:
     networks:
       - alertflow
 
+  startup:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    image: alertflow:latest
+    container_name: alertflow_startup
+    # yamllint disable rule:line-length
+    command:
+      - -c
+      - |
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        exec /entrypoint airflow version
+    # yamllint enable rule:line-length
+    environment:
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+      AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+      AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
+      AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
+      AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+      HOST_UID: ${HOST_UID}
+      HOST_GID: ${HOST_GID}
+      CDSAPI_KEY: ${CDSAPI_KEY}
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    user: "0:0"
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/alertflow:/sources
+    networks:
+      - alertflow
+
   webserver:
     <<: *airflow-common
     command: webserver
@@ -108,7 +124,10 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
       startup:
         condition: service_completed_successfully
     networks:
@@ -128,7 +147,10 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
       startup:
         condition: service_completed_successfully
     networks:
@@ -149,13 +171,22 @@ services:
       retries: 5
       start_period: 30s
     environment:
-      <<: *airflow-common-env
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+      AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+      AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
+      AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
+      AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+      HOST_UID: ${HOST_UID}
+      HOST_GID: ${HOST_GID}
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
       startup:
         condition: service_completed_successfully
     networks:
@@ -175,35 +206,12 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
       startup:
         condition: service_completed_successfully
-    networks:
-      - alertflow
-
-  startup:
-    <<: *airflow-common
-    entrypoint: /bin/bash
-    image: alertflow:latest
-    container_name: alertflow_startup
-    # yamllint disable rule:line-length
-    command:
-      - -c
-      - |
-        mkdir -p /sources/logs /sources/dags /sources/plugins
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
-        exec /entrypoint airflow version
-    # yamllint enable rule:line-length
-    environment:
-      <<: *airflow-common-env
-      CDSAPI_KEY: ${CDSAPI_KEY}
-      _AIRFLOW_DB_UPGRADE: 'true'
-      _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
-    user: "0:0"
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/alertflow:/sources
     networks:
       - alertflow
 
@@ -212,7 +220,13 @@ services:
     profiles:
       - debug
     environment:
-      <<: *airflow-common-env
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+      AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+      AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
+      AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
+      AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+      HOST_UID: ${HOST_UID}
+      HOST_GID: ${HOST_GID}
       CONNECTION_CHECK_MAX_COUNT: "0"
     # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
     command:
@@ -240,7 +254,10 @@ services:
       start_period: 30s
     restart: always
     depends_on:
-      <<: *airflow-common-depends-on
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
       startup:
         condition: service_completed_successfully
     networks:
