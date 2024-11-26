@@ -16,17 +16,15 @@ around 7 days to update the dataset.
 """
 
 import os
-import logging
-import calendar
-from datetime import timedelta, date
+from datetime import date, timedelta
+from itertools import chain
 
 import pendulum
 from airflow import DAG
 from airflow.decorators import task
 from airflow.models import Variable
+from satellite import ADM2, request
 from sqlalchemy import create_engine, text
-
-from satellite import request, ADM2
 
 env = os.getenv
 email_main = env("EMAIL_MAIN")
@@ -40,7 +38,6 @@ DEFAULT_ARGS = {
     "retries": 2,
     "retry_delay": timedelta(minutes=2),
 }
-
 
 
 with DAG(
@@ -59,35 +56,33 @@ with DAG(
     URI = Variable.get("psql_main_uri", deserialize_json=True)
 
     @task
-    def fetch_ds(dt, uri, api_key):
-        locale = "BRA"
+    def fetch_ds(locale, dt, uri, api_key):
         tablename = f"copernicus_{locale.lower()}"
         engine = create_engine(uri)
-        dt = date.fromisoformat(dt) # - timedelta(days=5)
-        end_day = calendar.monthrange(dt.year, dt.month)[1]
-        date_str = f"{dt.replace(day=1)}/{dt.replace(day=end_day)}"
-        # with engine.connect() as conn:
-        #     cur = conn.execute(
-        #         text(
-        #             f"SELECT geocode FROM weather.{tablename}"
-        #             f" WHERE date = '{dt}'"
-        #         )
-        #     )
-        #     table_geocodes = set(chain(*cur.fetchall()))
-        #
-        # all_geocodes = set([adm.code for adm in ADM2.filter(adm0=locale)])
-        # geocodes = all_geocodes.difference(table_geocodes)
-        # print("TABLE_GEO ", f"[{len(table_geocodes)}]: ", table_geocodes)
-        # print("DIFF_GEO: ", f"[{len(geocodes)}]: ", geocodes)
+        dt = date.fromisoformat(dt) - timedelta(days=5)
+
+        with engine.connect() as conn:
+            cur = conn.execute(
+                text(
+                    f"SELECT geocode FROM weather.{tablename}"
+                    f" WHERE date = '{str(dt)}'"
+                )
+            )
+            table_geocodes = set(chain(*cur.fetchall()))
+
+        all_geocodes = set([adm.code for adm in ADM2.filter(adm0=locale)])
+        geocodes = all_geocodes.difference(table_geocodes)
+        print("TABLE_GEO ", f"[{len(table_geocodes)}]: ", table_geocodes)
+        print("DIFF_GEO: ", f"[{len(geocodes)}]: ", geocodes)
 
         with request.reanalysis_era5_land(
-            date_str.replace("/", "_") + locale,
+            str(dt).replace("-", "_") + locale,
             api_token=api_key,
-            date=date_str,
+            date=str(dt),
             locale=locale,
         ) as ds:
             for adm in ADM2.filter(adm0=locale):
                 with engine.connect() as conn:
                     ds.cope.to_sql(adm, conn, tablename, "weather")
 
-    fetch_ds(DATE, URI["PSQL_MAIN_URI"], KEY["CDSAPI_KEY"])
+    fetch_ds("BRA", DATE, URI["PSQL_MAIN_URI"], KEY["CDSAPI_KEY"])
