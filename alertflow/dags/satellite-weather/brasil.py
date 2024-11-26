@@ -16,6 +16,7 @@ around 7 days to update the dataset.
 """
 
 import os
+from pathlib import Path
 from datetime import date, timedelta
 from itertools import chain
 
@@ -35,8 +36,8 @@ DEFAULT_ARGS = {
     # 'email': [email_main],
     "email_on_failure": True,
     "email_on_retry": False,
-    "retries": 2,
-    "retry_delay": timedelta(minutes=2),
+    "retries": 5,
+    "retry_delay": timedelta(seconds=30),
 }
 
 
@@ -47,7 +48,6 @@ with DAG(
     schedule="@monthly",
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 1),
-    end_date=pendulum.datetime(2024, 1, 1),
     catchup=True,
     max_active_runs=14,
 ) as dag:
@@ -75,14 +75,20 @@ with DAG(
         print("TABLE_GEO ", f"[{len(table_geocodes)}]: ", table_geocodes)
         print("DIFF_GEO: ", f"[{len(geocodes)}]: ", geocodes)
 
+        basename = str(dt).replace("-", "_") + locale
         with request.reanalysis_era5_land(
-            str(dt).replace("-", "_") + locale,
+            basename,
             api_token=api_key,
             date=str(dt),
             locale=locale,
         ) as ds:
-            for adm in ADM2.filter(adm0=locale):
+            for geocode in geocodes:
+                adm = ADM2.get(code=geocode):
                 with engine.connect() as conn:
                     ds.cope.to_sql(adm, conn, tablename, "weather")
+            file = Path(f"{basename}.zip")
+            if file.exists():
+                file.unlink()
+                print(f"{file} removed")
 
     fetch_ds("BRA", DATE, URI["PSQL_MAIN_URI"], KEY["CDSAPI_KEY"])
