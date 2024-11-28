@@ -45,7 +45,7 @@ with DAG(
     dag_id="COPERNICUS_BRASIL",
     description="ETL of weather data for Brazil",
     tags=["Brasil", "Copernicus"],
-    schedule="@monthly",
+    schedule="@daily",
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 1),
     catchup=True,
@@ -75,6 +75,9 @@ with DAG(
         print("TABLE_GEO ", f"[{len(table_geocodes)}]: ", table_geocodes)
         print("DIFF_GEO: ", f"[{len(geocodes)}]: ", geocodes)
 
+        if not geocodes:
+            return
+
         basename = str(dt).replace("-", "_") + locale
         with request.reanalysis_era5_land(
             basename,
@@ -83,12 +86,13 @@ with DAG(
             locale=locale,
         ) as ds:
             for geocode in geocodes:
-                adm = ADM2.get(code=geocode):
+                adm = ADM2.get(code=geocode, adm0=locale)
                 with engine.connect() as conn:
                     ds.cope.to_sql(adm, conn, tablename, "weather")
-            file = Path(f"{basename}.zip")
-            if file.exists():
-                file.unlink()
-                print(f"{file} removed")
+
+        file = Path(f"{basename}.zip")
+        if file.exists():
+            file.unlink()
+            print(f"{file} removed")
 
     fetch_ds("BRA", DATE, URI["PSQL_MAIN_URI"], KEY["CDSAPI_KEY"])

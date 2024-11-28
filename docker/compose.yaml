@@ -28,10 +28,12 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
     AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
     AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+
     HOST_UID: ${HOST_UID}
     HOST_GID: ${HOST_GID}
   volumes:
@@ -170,17 +172,17 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    environment:
-      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
-      AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
-      AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
-      AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
-      AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
-      HOST_UID: ${HOST_UID}
-      HOST_GID: ${HOST_GID}
-      # Required to handle warm shutdown of the celery workers properly
-      # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
-      DUMB_INIT_SETSID: "0"
+    # environment:
+    #   AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+    #   AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    #   AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
+    #   AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
+    #   AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+    #   HOST_UID: ${HOST_UID}
+    #   HOST_GID: ${HOST_GID}
+    #   # Required to handle warm shutdown of the celery workers properly
+    #   # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
+    #   DUMB_INIT_SETSID: "0"
     restart: always
     depends_on:
       redis:
