@@ -1,13 +1,11 @@
-version: 1.0.0
-compose-app: docker-compose
+backend: compose
 env-file: .env
 defaults:
-  group: {{ env.ENV }}
-
+  group: dev
 groups:
   dev:
     project-name: alertflow
-    compose-path:
+    config-path:
       - docker/compose.yaml
       - docker/compose-dev.yaml
     env-file: .env
@@ -21,7 +19,7 @@ groups:
 
   prod:
     project-name: alertflow
-    compose-path: 
+    config-path:
       - docker/compose.yaml
       - docker/compose-prod.yaml
     env-file: .env

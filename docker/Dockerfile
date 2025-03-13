@@ -44,12 +44,14 @@ RUN addgroup --gid ${HOST_GID} airflow \
   && chmod 0440 /etc/sudoers.d/airflow \
   && chown -R ${HOST_UID}:${HOST_GID} ${AIRFLOW_HOME}/ /opt/airflow/
 
+RUN groupadd docker && usermod -aG docker airflow && newgrp docker
+
 ENV PATH "$PATH:/home/airflow/.local/bin"
 ENV PATH "$PATH:/usr/bin/dirname"
 
 COPY --chown=airflow alertflow/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
 COPY --chown=airflow docker/scripts/entrypoint.sh /entrypoint.sh
-COPY --chown=airflow pyproject.toml ${AIRFLOW_HOME}
+COPY --chown=airflow pyproject.toml README.md ${AIRFLOW_HOME}
 RUN chmod +x /entrypoint.sh
 
 USER airflow
@@ -59,6 +61,6 @@ RUN curl -sSL https://install.python-poetry.org | python3
 WORKDIR ${AIRFLOW_HOME}
 
 RUN poetry config virtualenvs.create false \
-  && poetry install --only main
+  && poetry install --only main --no-root
 
 ENTRYPOINT [ "/entrypoint.sh" ]

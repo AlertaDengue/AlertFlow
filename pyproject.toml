@@ -15,8 +15,7 @@ sqlalchemy = "<2.0"
 flake8 = "^7.0.0"
 black = "^24.2.0"
 isort = "^5.13.2"
-containers-sugar = "1.11.1"
-compose-go = "^2.24.6"
+containers-sugar = "^1.16.1"
 apache-airflow = "^2.10.2"
 
 [build-system]
