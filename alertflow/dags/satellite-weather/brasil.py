@@ -16,9 +16,9 @@ around 7 days to update the dataset.
 """
 
 import os
-from pathlib import Path
 from datetime import date, timedelta
 from itertools import chain
+from pathlib import Path
 
 import pendulum
 from airflow import DAG
@@ -45,7 +45,7 @@ with DAG(
     dag_id="COPERNICUS_BRASIL",
     description="ETL of weather data for Brazil",
     tags=["Brasil", "Copernicus"],
-    schedule="@monthly",
+    schedule="@daily",
     default_args=DEFAULT_ARGS,
     start_date=pendulum.datetime(2000, 1, 1),
     catchup=True,
@@ -68,12 +68,21 @@ with DAG(
                     f" WHERE date = '{str(dt)}'"
                 )
             )
-            table_geocodes = set(chain(*cur.fetchall()))
+            table_geocodes = set(map(int, chain(*cur.fetchall())))
 
-        all_geocodes = set([adm.code for adm in ADM2.filter(adm0=locale)])
+        to_ignore = ["2916104", "2919926", "2605459"]
+        all_geocodes = set(
+            [
+                int(adm.code)
+                for adm in ADM2.filter(adm0=locale)
+                if str(adm.code) not in to_ignore
+            ]
+        )
         geocodes = all_geocodes.difference(table_geocodes)
-        print("TABLE_GEO ", f"[{len(table_geocodes)}]: ", table_geocodes)
-        print("DIFF_GEO: ", f"[{len(geocodes)}]: ", geocodes)
+        print(f"geocodes [{len(geocodes)}]: {geocodes} ")
+
+        if not geocodes:
+            return
 
         basename = str(dt).replace("-", "_") + locale
         with request.reanalysis_era5_land(
@@ -83,7 +92,7 @@ with DAG(
             locale=locale,
         ) as ds:
             for geocode in geocodes:
-                adm = ADM2.get(code=geocode):
+                adm = ADM2.get(code=geocode)
                 with engine.connect() as conn:
                     ds.cope.to_sql(adm, conn, tablename, "weather")
             file = Path(f"{basename}.zip")
