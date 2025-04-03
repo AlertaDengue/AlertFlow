@@ -68,12 +68,20 @@ with DAG(
                     f" WHERE date = '{str(dt)}'"
                 )
             )
-            table_geocodes = set(chain(*cur.fetchall()))
+            table_geocodes = set(map(int, chain(*cur.fetchall())))
 
-        all_geocodes = set([adm.code for adm in ADM2.filter(adm0=locale)])
+        to_ignore = ["2916104", "2919926", "2605459"]
+        all_geocodes = set([
+            int(adm.code)
+            for adm
+            in ADM2.filter(adm0=locale)
+            if str(adm.code) not in to_ignore
+        ])
         geocodes = all_geocodes.difference(table_geocodes)
-        print("TABLE_GEO ", f"[{len(table_geocodes)}]: ", table_geocodes)
-        print("DIFF_GEO: ", f"[{len(geocodes)}]: ", geocodes)
+        print(f"geocodes: {geocodes} ")
+
+        if not geocodes:
+            return
 
         basename = str(dt).replace("-", "_") + locale
         with request.reanalysis_era5_land(
