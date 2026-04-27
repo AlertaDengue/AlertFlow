@@ -59,6 +59,6 @@ RUN curl -sSL https://install.python-poetry.org | python3
 WORKDIR ${AIRFLOW_HOME}
 
 RUN poetry config virtualenvs.create false \
-  && poetry install --no-root --only main
+  && poetry install --no-root --only main --no-root
 
 ENTRYPOINT [ "/entrypoint.sh" ]
