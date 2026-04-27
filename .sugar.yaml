@@ -12,12 +12,15 @@ groups:
       - docker/compose-dev.yaml
     env-file: .env
     services:
-      default: scheduler,triggerer,webserver,worker
+      default: redis,postgres,airflow-scheduler,airflow-triggerer,airflow-apiserver,airflow-worker,airflow-dag-processor
       available:
-        - name: scheduler
-        - name: triggerer
-        - name: webserver
-        - name: worker
+        - name: redis
+        - name: postgres
+        - name: airflow-scheduler
+        - name: airflow-triggerer
+        - name: airflow-apiserver
+        - name: airflow-worker
+        - name: airflow-dag-processor
 
   prod:
     project-name: alertflow
@@ -26,9 +29,12 @@ groups:
       - docker/compose-prod.yaml
     env-file: .env
     services:
-      default: scheduler,triggerer,webserver,worker
+      default: redis,postgres,airflow-scheduler,airflow-triggerer,airflow-apiserver,airflow-worker,airflow-dag-processor
       available:
-        - name: scheduler
-        - name: triggerer
-        - name: webserver
-        - name: worker
+        - name: redis
+        - name: postgres
+        - name: airflow-scheduler
+        - name: airflow-triggerer
+        - name: airflow-apiserver
+        - name: airflow-worker
+        - name: airflow-dag-processor

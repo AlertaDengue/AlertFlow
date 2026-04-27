@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
+api:
   ENV: dev
   AIRFLOW_PROJ_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
   AIRFLOW_HOME: /opt/airflow
@@ -99,7 +99,7 @@ jobs:
 
     - name: Wait Containers
       run: |
-        make containers-wait-all
+        make wait-all
 
     # - name: Setup tmate session
     #   if: "${{ failure() }}"

@@ -1,4 +1,4 @@
-FROM apache/airflow:latest-python3.12
+FROM apache/airflow:latest
 
 LABEL maintainer="Luã Bida Vacaro <luabidaa@gmail.com>"
 LABEL org.opencontainers.image.title="AlertFlow"
@@ -47,7 +47,7 @@ RUN addgroup --gid ${HOST_GID} airflow \
 ENV PATH "$PATH:/home/airflow/.local/bin"
 ENV PATH "$PATH:/usr/bin/dirname"
 
-COPY --chown=airflow alertflow/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
+COPY --chown=airflow alertflow/config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
 COPY --chown=airflow docker/scripts/entrypoint.sh /entrypoint.sh
 COPY --chown=airflow pyproject.toml README.md ${AIRFLOW_HOME}
 RUN chmod +x /entrypoint.sh
