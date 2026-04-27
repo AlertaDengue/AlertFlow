@@ -1,4 +1,4 @@
-FROM apache/airflow:latest
+FROM apache/airflow:latest-python3.12
 
 LABEL maintainer="Luã Bida Vacaro <luabidaa@gmail.com>"
 LABEL org.opencontainers.image.title="AlertFlow"
