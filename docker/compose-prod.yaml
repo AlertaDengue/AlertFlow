@@ -1,13 +1,13 @@
 services:
-  worker:  
+  airflow-worker:
     networks:
         - infodengue-prod_infodengue
 
-  scheduler:  
+  airflow-scheduler:
     networks:
         - infodengue-prod_infodengue
 
-  webserver:  
+  airflow-apiserver:
     networks:
         - infodengue-prod_infodengue
 

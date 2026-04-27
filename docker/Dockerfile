@@ -47,7 +47,7 @@ RUN addgroup --gid ${HOST_GID} airflow \
 ENV PATH "$PATH:/home/airflow/.local/bin"
 ENV PATH "$PATH:/usr/bin/dirname"
 
-COPY --chown=airflow alertflow/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
+COPY --chown=airflow alertflow/config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
 COPY --chown=airflow docker/scripts/entrypoint.sh /entrypoint.sh
 COPY --chown=airflow pyproject.toml README.md ${AIRFLOW_HOME}
 RUN chmod +x /entrypoint.sh
@@ -59,6 +59,6 @@ RUN curl -sSL https://install.python-poetry.org | python3
 WORKDIR ${AIRFLOW_HOME}
 
 RUN poetry config virtualenvs.create false \
-  && poetry install --no-root --only main
+  && poetry install --no-root --only main --no-root
 
 ENTRYPOINT [ "/entrypoint.sh" ]

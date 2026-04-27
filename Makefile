@@ -5,11 +5,6 @@ CMD:=
 ARGS:=
 TIMEOUT:=90
 
-# https://github.com/containers/podman-compose/issues/491#issuecomment-1289944841
-CONTAINER_APP=docker compose \
-	--env-file=.env \
-	--file docker/compose.yaml
-
 include .env
 
 # -- Project --
@@ -22,35 +17,35 @@ linter:
 	pre-commit run --all-files --verbose
 
 # -- Docker --
-containers-build:
+build:
 	set -e
-	$(CONTAINER_APP) build ${SERVICES}
+	sugar build ${SERVICES}
 
-containers-start:
+start:
 	set -ex
-	$(CONTAINER_APP) up --remove-orphans -d ${SERVICES}
+	sugar up --remove-orphans -d ${SERVICES}
 
-containers-stop:
+stop:
 	set -ex
-	$(CONTAINER_APP) stop ${ARGS} ${SERVICES}
+	sugar stop ${ARGS} ${SERVICES}
 
-containers-rm:
+rm:
 	set -ex
-	$(CONTAINER_APP) rm ${ARGS} ${SERVICES}
+	sugar rm ${ARGS} ${SERVICES}
 
-containers-restart: containers-stop containers-start
+restart: containers-stop containers-start
 
-containers-down:
-	$(CONTAINER_APP) down ${ARGS}
+down:
+	sugar down ${ARGS}
 
-containers-logs:
-	$(CONTAINER_APP) logs ${ARGS} ${SERVICES}
+logs:
+	sugar logs ${ARGS} ${SERVICES}
 
-containers-wait:
+wait:
 	timeout ${TIMEOUT} docker/scripts/healthcheck.sh ${SERVICE}
 
-containers-wait-all:
-	$(MAKE) containers-wait SERVICE="scheduler"
-	$(MAKE) containers-wait SERVICE="triggerer"
-	$(MAKE) containers-wait SERVICE="webserver"
-	$(MAKE) containers-wait SERVICE="worker"
+wait-all:
+	$(MAKE) wait SERVICE="scheduler"
+	$(MAKE) wait SERVICE="triggerer"
+	$(MAKE) wait SERVICE="webserver"
+	$(MAKE) wait SERVICE="worker"
