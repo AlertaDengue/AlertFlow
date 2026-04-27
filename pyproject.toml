@@ -9,6 +9,8 @@ readme = "README.md"
 python = ">=3.10,<3.13"
 satellite-weather-downloader = {git = "https://github.com/AlertaDengue/satellite-weather-downloader"}
 sqlalchemy = "<2.0"
+pandas = "<2"
+setuptools = "^82.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
