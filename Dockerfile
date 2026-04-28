@@ -1,4 +1,4 @@
-FROM apache/airflow:latest
+FROM apache/airflow:slim-3.2.1-python3.14
 
 LABEL maintainer="Luã Bida Vacaro <luabidaa@gmail.com>"
 LABEL org.opencontainers.image.title="AlertFlow"
@@ -30,13 +30,11 @@ RUN apt-get update \
   libpq-dev \
   python3-dev \
   python3-venv \
-  libsqlite3-dev \
   postgresql-client \
   wget \
   gettext \
   build-essential \
   && rm -rf /var/lib/apt/lists/*
-
 
 RUN addgroup --gid ${HOST_GID} airflow \
   && usermod -u ${HOST_UID} -g ${HOST_GID} -d /home/airflow -s /bin/bash airflow \
@@ -47,8 +45,7 @@ RUN addgroup --gid ${HOST_GID} airflow \
 ENV PATH "$PATH:/home/airflow/.local/bin"
 ENV PATH "$PATH:/usr/bin/dirname"
 
-COPY --chown=airflow alertflow/config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
-COPY --chown=airflow docker/scripts/entrypoint.sh /entrypoint.sh
+COPY --chown=airflow scripts/entrypoint.sh /entrypoint.sh
 COPY --chown=airflow pyproject.toml README.md ${AIRFLOW_HOME}
 RUN chmod +x /entrypoint.sh
 

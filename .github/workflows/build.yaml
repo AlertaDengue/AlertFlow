@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
 
-api:
+env:
   ENV: dev
   AIRFLOW_PROJ_DIR: /home/runner/work/AlertFlow/AlertFlow/alertflow
   AIRFLOW_HOME: /opt/airflow
@@ -21,7 +21,11 @@ api:
   AIRFLOW_PSQL_HOST_MAIN: ${{ secrets.CI_PSQL_HOST }}
   AIRFLOW_PSQL_PORT_MAIN: ${{ secrets.CI_PSQL_PORT }}
   AIRFLOW_PSQL_DB_MAIN: ${{ secrets.CI_PSQL_DB }}
-  EPISCANNER_HOST_DATA: /home/runner/work/AlertFlow/AlertFlow/alertflow/episcanner-downloader/epi_scanner/data/
+  AIRFLOW__CORE__FERNET_KEY: '-'
+  AIRFLOW__WEBSERVER__SECRET_KEY: '-'
+  AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: '-'
+  AIRFLOW__API_AUTH__JWT_SECRET: '-'
+  AIRFLOW__LOGGING__LOGGING_LEVEL: ERROR
 
 jobs:
   main:
@@ -91,11 +95,11 @@ jobs:
 
     - name: Build Base Image
       run: |
-        sugar build
+        docker compose build
 
     - name: Start Airflow
       run: |
-        sugar up --options -d
+        docker compose up -d
 
     - name: Wait Containers
       run: |

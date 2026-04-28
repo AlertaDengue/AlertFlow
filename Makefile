@@ -19,30 +19,30 @@ linter:
 # -- Docker --
 build:
 	set -e
-	sugar build ${SERVICES}
+	docker compose build ${SERVICES}
 
 start:
 	set -ex
-	sugar up --remove-orphans -d ${SERVICES}
+	docker compose up --remove-orphans -d ${SERVICES}
 
 stop:
 	set -ex
-	sugar stop ${ARGS} ${SERVICES}
+	docker compose stop ${ARGS} ${SERVICES}
 
 rm:
 	set -ex
-	sugar rm ${ARGS} ${SERVICES}
+	docker compose rm ${ARGS} ${SERVICES}
 
 restart: containers-stop containers-start
 
 down:
-	sugar down ${ARGS}
+	docker compose down ${ARGS}
 
 logs:
-	sugar logs ${ARGS} ${SERVICES}
+	docker compose logs ${ARGS} ${SERVICES}
 
 wait:
-	timeout ${TIMEOUT} docker/scripts/healthcheck.sh ${SERVICE}
+	timeout ${TIMEOUT} scripts/healthcheck.sh ${SERVICE}
 
 wait-all:
 	$(MAKE) wait SERVICE="scheduler"
