@@ -28,34 +28,42 @@ x-airflow-common:
     &airflow-common-env
     HOST_UID: ${HOST_UID}
     HOST_GID: ${HOST_GID}
+    AIRFLOW_UID: ${HOST_UID}
     AIRFLOW_PORT: ${AIRFLOW_PORT}
     AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
     AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
     AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+    # --
+    AIRFLOW__SMTP__SMTP_HOST: ${AIRFLOW__SMTP__SMTP_HOST:-''}
+    AIRFLOW__SMTP__SMTP_STARTTLS: ${AIRFLOW__SMTP__SMTP_STARTTLS:-true}
+    AIRFLOW__SMTP__SMTP_PORT: ${AIRFLOW__SMTP__SMTP_PORT:-587}
+    AIRFLOW__SMTP__SMTP_MAIL_FROM: ${AIRFLOW__SMTP__SMTP_MAIL_FROM:-''}
+    AIRFLOW__SENTRY__SENTRY_ON: ${AIRFLOW__SENTRY__SENTRY_ON:-true}
+    AIRFLOW__SENTRY__SENTRY_DSN: ${AIRFLOW__SENTRY__SENTRY_DSN:-''}
     # --
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
     AIRFLOW__CORE__DAGS_FOLDER: ${AIRFLOW_HOME}/dags
     AIRFLOW__CORE__XCOM_BACKEND: airflow.models.xcom.BaseXCom
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__LOAD_EXAMPLES: false
     AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Sao_Paulo
     AIRFLOW__CORE__INTERNAL_API_URL: http://localhost:${AIRFLOW_PORT}
     AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: ${AIRFLOW__CORE__INTERNAL_API_SECRET_KEY}
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:${AIRFLOW_PORT}/execution/'
-    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION:-true}
     AIRFLOW__CLI__ENDPOINT_URL: http://localhost:${AIRFLOW_PORT}/alertflow
     AIRFLOW__WEBSERVER__BASE_URL: http://localhost:${AIRFLOW_PORT}/alertflow
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
     AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
     AIRFLOW__WEBSERVER__WEB_SERVER_PORT: ${AIRFLOW_PORT}
-    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: true
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
     AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
-    AIRFLOW__EMAIL__FROM_EMAIL: alertflow@airflow.com
+    AIRFLOW__LOGGING__LOGGING_LEVEL: ${AIRFLOW__LOGGING__LOGGING_LEVEL:-INFO}
   volumes:
     - ./alertflow/dags:${AIRFLOW_HOME}/dags
     - ./alertflow/logs:${AIRFLOW_HOME}/logs
@@ -218,15 +226,15 @@ services:
     command:
       - -c
       - |
-        if [[ -z "${AIRFLOW_UID}" ]]; then
+        if [[ -z "${HOST_UID}" ]]; then
           echo
-          echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
+          echo -e "\033[1;33mWARNING!!!: HOST_UID not set!\e[0m"
           echo "If you are on Linux, you SHOULD follow the instructions below to set "
-          echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
+          echo "HOST_UID environment variable, otherwise files will be owned by root."
           echo "For other operating systems you can get rid of the warning with manually created .env file:"
           echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
           echo
-          export AIRFLOW_UID=$$(id -u)
+          export HOST_UID=$$(id -u)
         fi
         one_meg=1048576
         mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
@@ -277,13 +285,13 @@ services:
         echo
         ls -la /opt/airflow/{logs,dags,plugins,config}
         echo
-        echo "Change ownership of files in /opt/airflow to ${AIRFLOW_UID}:0"
+        echo "Change ownership of files in /opt/airflow to ${HOST_UID}:0"
         echo
-        chown -R "${AIRFLOW_UID}:0" /opt/airflow/
+        chown -R "${HOST_UID}:0" /opt/airflow/
         echo
-        echo "Change ownership of files in shared volumes to ${AIRFLOW_UID}:0"
+        echo "Change ownership of files in shared volumes to ${HOST_UID}:0"
         echo
-        chown -v -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags,plugins,config}
+        chown -v -R "${HOST_UID}:0" /opt/airflow/{logs,dags,plugins,config}
         echo
         echo "Files in shared volumes:"
         echo

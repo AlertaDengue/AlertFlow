@@ -13,6 +13,7 @@ psycopg2 = "^2.9.12"
 asyncpg = "^0.31.0"
 apache-airflow-providers-fab = "^3.6.2"
 apache-airflow-providers-celery = "^3.18.0"
+sentry-sdk = "^2.58.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"

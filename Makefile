@@ -42,7 +42,7 @@ logs:
 	docker compose logs ${ARGS} ${SERVICES}
 
 wait:
-	timeout ${TIMEOUT} docker/scripts/healthcheck.sh ${SERVICE}
+	timeout ${TIMEOUT} scripts/healthcheck.sh ${SERVICE}
 
 wait-all:
 	$(MAKE) wait SERVICE="scheduler"
