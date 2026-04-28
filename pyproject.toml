@@ -6,15 +6,18 @@ authors = ["Luã Bida Vacaro <luabidaa@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.15"
+python = ">=3.14,<3.15"
 satellite-weather-downloader = {git = "https://github.com/AlertaDengue/satellite-weather-downloader", tag = "2.0.0"}
 sqlalchemy = ">=2.0.48"
+psycopg2 = "^2.9.12"
+asyncpg = "^0.31.0"
+apache-airflow-providers-fab = "^3.6.2"
+apache-airflow-providers-celery = "^3.18.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"
 black = "^24.2.0"
 isort = "^5.13.2"
-containers-sugar = "1.11.1"
 compose-go = "^2.24.6"
 apache-airflow = ">=3.2.1"
 

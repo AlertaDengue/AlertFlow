@@ -91,11 +91,11 @@ jobs:
 
     - name: Build Base Image
       run: |
-        sugar build
+        docker compose build
 
     - name: Start Airflow
       run: |
-        sugar up --options -d
+        docker compose up --options -d
 
     - name: Wait Containers
       run: |

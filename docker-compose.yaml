@@ -18,40 +18,48 @@
 ---
 x-airflow-common:
   &airflow-common
-  build: 
-    context: ..
-    dockerfile: docker/Dockerfile
+  build:
+    context: .
+    dockerfile: Dockerfile
     args:
       HOST_UID: ${HOST_UID}
       HOST_GID: ${HOST_GID}
   environment:
     &airflow-common-env
+    HOST_UID: ${HOST_UID}
+    HOST_GID: ${HOST_GID}
     AIRFLOW_PORT: ${AIRFLOW_PORT}
-    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
-    AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: ${AIRFLOW__CORE__INTERNAL_API_SECRET_KEY}
-    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
-    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
     AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
     AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
-    HOST_UID: ${HOST_UID}
-    HOST_GID: ${HOST_GID}
     # --
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+    AIRFLOW__CORE__DAGS_FOLDER: ${AIRFLOW_HOME}/dags
+    AIRFLOW__CORE__XCOM_BACKEND: airflow.models.xcom.BaseXCom
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Sao_Paulo
+    AIRFLOW__CORE__INTERNAL_API_URL: http://localhost:${AIRFLOW_PORT}
+    AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: ${AIRFLOW__CORE__INTERNAL_API_SECRET_KEY}
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:${AIRFLOW_PORT}/execution/'
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CLI__ENDPOINT_URL: http://localhost:${AIRFLOW_PORT}/alertflow
+    AIRFLOW__WEBSERVER__BASE_URL: http://localhost:${AIRFLOW_PORT}/alertflow
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
+    AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
+    AIRFLOW__WEBSERVER__WEB_SERVER_PORT: ${AIRFLOW_PORT}
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
-    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:${AIRFLOW_PORT}/execution/'
-    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-airflow_jwt_secret}
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
     AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
+    AIRFLOW__EMAIL__FROM_EMAIL: alertflow@airflow.com
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/alertflow/dags:${AIRFLOW_HOME}/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/alertflow/logs:${AIRFLOW_HOME}/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/alertflow/plugins:${AIRFLOW_HOME}/plugins
-    - ${AIRFLOW_PROJ_DIR:-.}/alertflow/config/airflow.cfg:${AIRFLOW_HOME}/airflow.cfg
+    - ./alertflow/dags:${AIRFLOW_HOME}/dags
+    - ./alertflow/logs:${AIRFLOW_HOME}/logs
+    - ./alertflow/plugins:${AIRFLOW_HOME}/plugins
   user: "${HOST_UID}:0"
   depends_on:
     &airflow-common-depends-on
@@ -154,6 +162,7 @@ services:
         condition: service_completed_successfully
     networks:
       - alertflow
+      - infodengue
 
   airflow-worker:
     <<: *airflow-common
@@ -181,6 +190,7 @@ services:
         condition: service_completed_successfully
     networks:
       - alertflow
+      - infodengue
 
   airflow-triggerer:
     <<: *airflow-common
@@ -284,8 +294,8 @@ services:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     networks:
@@ -330,6 +340,7 @@ services:
         condition: service_completed_successfully
     networks:
       - alertflow
+      - infodengue
 
 volumes:
   postgres-db-volume:
@@ -337,3 +348,6 @@ volumes:
 networks:
   alertflow:
     driver: bridge
+  infodengue:
+    name: infodengue-${ENV}_infodengue
+    external: true
