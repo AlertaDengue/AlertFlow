@@ -1,6 +1,28 @@
 Release Notes
 ---
 
+## [2.0.0](https://github.com/AlertaDengue/AlertFlow/compare/1.2.0...2.0.0) (2026-05-02)
+
+### ⚠ BREAKING CHANGES
+
+* remove old workflow
+
+* include more variables
+
+### Bug Fixes
+
+* **brasil:** fix 'Connection object has no attribute cursor' error ([#31](https://github.com/AlertaDengue/AlertFlow/issues/31)) ([9f9a890](https://github.com/AlertaDengue/AlertFlow/commit/9f9a890f566785b9de2dd4d37b9425052baa6eb9))
+* **brasil:** use geocodes instead of region ([#35](https://github.com/AlertaDengue/AlertFlow/issues/35)) ([6bb5e61](https://github.com/AlertaDengue/AlertFlow/commit/6bb5e615931134311f371e9dfe476299fd35533e))
+* **climate:** minor fixes & exclude erroring geocodes ([#39](https://github.com/AlertaDengue/AlertFlow/issues/39)) ([f718c03](https://github.com/AlertaDengue/AlertFlow/commit/f718c03c183c88aa28c73a0b3ab874ac8eed7fcb))
+* endpoint fixes to work on production & dev at the same time ([#44](https://github.com/AlertaDengue/AlertFlow/issues/44)) ([4f18a7d](https://github.com/AlertaDengue/AlertFlow/commit/4f18a7d6db409f0ee06dc29d2902faa821d64123))
+* include h5py dep ([#45](https://github.com/AlertaDengue/AlertFlow/issues/45)) ([a1055f2](https://github.com/AlertaDengue/AlertFlow/commit/a1055f243940b6f874193b25170dd813ffab8e27))
+* **satellite:** update satellite version & refactor the dag ([#30](https://github.com/AlertaDengue/AlertFlow/issues/30)) ([a989204](https://github.com/AlertaDengue/AlertFlow/commit/a989204aca817c0c01ac1ffada09b6a9f91e8925))
+* **weather:** add geocode filter to weather brasil task ([#27](https://github.com/AlertaDengue/AlertFlow/issues/27)) ([6b8ece5](https://github.com/AlertaDengue/AlertFlow/commit/6b8ece5f4ba8c4d0220c5e0fff57b468d7ea467e))
+
+### Code Refactoring
+
+* simplify cluster & mirror Airflow deploy workflow ([#43](https://github.com/AlertaDengue/AlertFlow/issues/43)) ([a8ab33a](https://github.com/AlertaDengue/AlertFlow/commit/a8ab33ad8762804daa54ede3aa09a84834ea53ba))
+
 ## [1.2.0](https://github.com/AlertaDengue/AlertFlow/compare/1.1.2...1.2.0) (2023-05-18)
 
 
