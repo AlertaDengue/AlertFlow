@@ -1,0 +1,10 @@
+geobr
+geopandas
+pandas
+sqlalchemy
+pystac-client
+rasterio
+rasterstats
+numpy
+shapely
+pyproj
