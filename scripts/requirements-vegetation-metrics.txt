@@ -8,3 +8,7 @@ rasterstats
 numpy
 shapely
 pyproj
+pydantic
+apache-airflow
+pendulum
+psycopg2-binary
