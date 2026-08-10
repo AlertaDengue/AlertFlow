@@ -121,10 +121,10 @@ services:
       - "${AIRFLOW_PORT}:${AIRFLOW_PORT}"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://webserver:${AIRFLOW_PORT}/api/v2/monitor/health"]
-      interval: 30s
+      interval: 10s
       timeout: 10s
-      retries: 5
-      start_period: 30s
+      retries: 60
+      start_period: 60s
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -192,8 +192,6 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      airflow-apiserver:
-        condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
     networks:

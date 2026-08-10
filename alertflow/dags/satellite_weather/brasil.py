@@ -2,7 +2,6 @@
 ERA5-Land daily weather ingestion for Brazil.
 
 Runs daily with a 5-day delay. Data goes into weather.copernicus_bra.
-Replaces precip_* values using the corrected per-interval computation.
 """
 
 from datetime import date, timedelta
@@ -42,18 +41,17 @@ with DAG(
     def fetch_weather(dt: str, **context):
         from satellite import ADM2, request
 
-        psql_var = Variable.get("psql_main_uri", deserialize_json=True)
-        uri = psql_var["PSQL_MAIN_URI"]
-        cds_var = Variable.get("cdsapi_key", deserialize_json=True)
-        api_key = cds_var["CDSAPI_KEY"]
+        eng_var = Variable.get("psql_main_uri", deserialize_json=True)
+        uri = eng_var["PSQL_MAIN_URI"]
+        key_var = Variable.get("cdsapi_key", deserialize_json=True)
+        api_key = key_var["CDSAPI_KEY"]
         engine = create_engine(uri)
 
         day = date.fromisoformat(dt) - timedelta(days=5)
-        tablename = f"{_TABLE}"
 
         print(f"[{day}] building GeoDataFrame...")
-        adm2_bra = ADM2.filter(adm0="BRA")
-        adms = [a for a in adm2_bra if str(a.code) not in _UNFILLABLE]
+        _a = ADM2.filter(adm0="BRA")
+        adms = [a for a in _a if str(a.code) not in _UNFILLABLE]
         gdf = pd.concat([a.to_dataframe() for a in adms], ignore_index=True)
         print(f"[{day}] {len(adms)} municipalities loaded")
 
@@ -76,7 +74,7 @@ with DAG(
             conn.execute(
                 text(
                     f"""
-                INSERT INTO weather.{tablename}
+                INSERT INTO weather.{_TABLE}
                     (date, geocode, epiweek,
                      temp_min, temp_med, temp_max,
                      precip_min, precip_med, precip_max, precip_tot,
@@ -91,7 +89,7 @@ with DAG(
                     precip_min = EXCLUDED.precip_min,
                     precip_med = EXCLUDED.precip_med,
                     precip_max = EXCLUDED.precip_max,
-                    precip_tot = EXCLUDED.precip_tot,
+                    precip_tot = EXCLUDED.precip_tot
             """
                 ),
                 df.to_dict("records"),

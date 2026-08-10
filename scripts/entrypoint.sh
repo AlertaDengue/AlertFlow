@@ -325,7 +325,7 @@ fi
 # Get the HOST_GID from the .env file
 # HOST_GID=$(grep -E "^HOST_GID=" .env | cut -d'=' -f2)
 
-# Change the group of '/opt/airflow' directory
-sudo chgrp -R ${HOST_GID} /opt/airflow/
+# Change the group of mounted volumes only
+sudo chgrp -R ${HOST_GID} ${AIRFLOW_HOME}/logs ${AIRFLOW_HOME}/dags ${AIRFLOW_HOME}/plugins ${AIRFLOW_HOME}/config 2>/dev/null || true
 
 exec "airflow" "${@}"
