@@ -53,11 +53,11 @@ uri = Variable.get("psql_main_uri", deserialize_json=True)
 with DAG(
     dag_id="VEGETATION_INDEX_METRICS",
     default_args=default_args,
-    start_date=datetime(2020, 1, 1),
+    start_date=datetime(2020, 1, 1, 3, 0),
     schedule=timedelta(days=16),
     catchup=True,
     tags=["geospatial", "vegetation"],
-    max_active_runs=2,
+    max_active_runs=4,
 ) as vegetation_dag:
 
     @task.external_python(python=PYTHON_ENV_PATH)

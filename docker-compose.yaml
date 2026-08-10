@@ -120,7 +120,7 @@ services:
     ports:
       - "${AIRFLOW_PORT}:${AIRFLOW_PORT}"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:${AIRFLOW_PORT}/api/v2/monitor/health"]
+      test: ["CMD", "curl", "--fail", "http://webserver:${AIRFLOW_PORT}/api/v2/monitor/health"]
       interval: 30s
       timeout: 10s
       retries: 5
