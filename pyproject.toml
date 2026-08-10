@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.14,<3.15"
-satellite-weather-downloader = {git = "https://github.com/AlertaDengue/satellite-weather-downloader", tag = "2.0.2"}
+satellite-weather-downloader = {git = "https://github.com/AlertaDengue/satellite-weather-downloader", tag = "2.0.3"}
 sqlalchemy = ">=2.0.48"
 psycopg2 = "^2.9.12"
 asyncpg = "^0.31.0"
