@@ -1,7 +1,7 @@
 """
 ERA5-Land daily weather ingestion for Brazil.
 
-Runs daily with a 5-day delay. Data goes into weather.copernicus_bra.
+Runs daily with a 7-day delay. Data goes into weather.copernicus_bra.
 """
 
 from datetime import date, timedelta
@@ -32,7 +32,7 @@ with DAG(
     tags=["Brasil", "Copernicus"],
     schedule="@daily",
     default_args=DEFAULT_ARGS,
-    start_date=pendulum.datetime(2026, 8, 1),
+    start_date=pendulum.datetime(2026, 8, 1, 4),
     catchup=True,
     max_active_runs=4,
 ) as dag:
@@ -47,7 +47,7 @@ with DAG(
         api_key = key_var["CDSAPI_KEY"]
         engine = create_engine(uri)
 
-        day = date.fromisoformat(dt) - timedelta(days=5)
+        day = date.fromisoformat(dt) - timedelta(days=7)
 
         print(f"[{day}] building GeoDataFrame...")
         _a = ADM2.filter(adm0="BRA")
@@ -61,6 +61,7 @@ with DAG(
             api_token=api_key,
             date=str(day),
             locale="BRA",
+            remove_files=True,
         ) as ds:
             print(f"[{day}] processing (batch_to_df)...")
             df = ds.cope.batch_to_df(gdf, exclude_geocodes=_UNFILLABLE)
@@ -69,6 +70,14 @@ with DAG(
             print(f"[{day}] no data produced")
             return
 
+        if df.isna().any().any():
+            bad_cols = [c for c in df.columns if df[c].isna().any()]
+            bad_rows = int(df.isna().any(axis=1).sum())
+            raise ValueError(
+                f"[{day}] {bad_rows} rows contain NaN/None in "
+                f"columns {bad_cols}; aborting insert"
+            )
+
         print(f"[{day}] inserting {len(df)} rows...")
         with engine.connect() as conn:
             conn.execute(
@@ -76,20 +85,30 @@ with DAG(
                     f"""
                 INSERT INTO weather.{_TABLE}
                     (date, geocode, epiweek,
-                     temp_min, temp_med, temp_max,
-                     precip_min, precip_med, precip_max, precip_tot,
-                     pressao_min, pressao_med, pressao_max,
-                     umid_min, umid_med, umid_max)
+                    temp_min, temp_med, temp_max,
+                    precip_min, precip_med, precip_max, precip_tot,
+                    pressao_min, pressao_med, pressao_max,
+                    umid_min, umid_med, umid_max)
                 VALUES (:date, :geocode, :epiweek,
                         :temp_min, :temp_med, :temp_max,
                         :precip_min, :precip_med, :precip_max, :precip_tot,
                         :pressao_min, :pressao_med, :pressao_max,
                         :umid_min, :umid_med, :umid_max)
                 ON CONFLICT (date, geocode) DO UPDATE SET
-                    precip_min = EXCLUDED.precip_min,
-                    precip_med = EXCLUDED.precip_med,
-                    precip_max = EXCLUDED.precip_max,
-                    precip_tot = EXCLUDED.precip_tot
+                    epiweek     = EXCLUDED.epiweek,
+                    temp_min    = EXCLUDED.temp_min,
+                    temp_med    = EXCLUDED.temp_med,
+                    temp_max    = EXCLUDED.temp_max,
+                    precip_min  = EXCLUDED.precip_min,
+                    precip_med  = EXCLUDED.precip_med,
+                    precip_max  = EXCLUDED.precip_max,
+                    precip_tot  = EXCLUDED.precip_tot,
+                    pressao_min = EXCLUDED.pressao_min,
+                    pressao_med = EXCLUDED.pressao_med,
+                    pressao_max = EXCLUDED.pressao_max,
+                    umid_min    = EXCLUDED.umid_min,
+                    umid_med    = EXCLUDED.umid_med,
+                    umid_max    = EXCLUDED.umid_max
             """
                 ),
                 df.to_dict("records"),

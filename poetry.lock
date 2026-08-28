@@ -4825,7 +4825,7 @@ files = [
 
 [[package]]
 name = "satellite-weather-downloader"
-version = "2.0.4"
+version = "2.0.6"
 description = "The modules available in this package are designed to capture and proccess satellite data from Copernicus"
 optional = false
 python-versions = ">=3.11,<4"
@@ -4853,8 +4853,8 @@ xarray = "<2024.10"
 [package.source]
 type = "git"
 url = "https://github.com/AlertaDengue/satellite-weather-downloader"
-reference = "2.0.4"
-resolved_reference = "2c35cd68f0d8e367985bff253939123392116561"
+reference = "2.0.6"
+resolved_reference = "3466fd951d613a1d85753215e31be8c00c64cad0"
 
 [[package]]
 name = "scipy"
@@ -6246,4 +6246,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14,<3.15"
-content-hash = "63c5ceb7b9697ca60472c73393f7c3a1ffd3da658c86cc69844f1f819ae159d9"
+content-hash = "a1d8f0f8a13a5ab289b8aa5490d24af4aaa5fbfb11367b2507548df37e8b2f2f"
