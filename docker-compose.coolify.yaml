@@ -1,0 +1,286 @@
+# Coolify-ready Docker Compose stack for AlertFlow.
+#
+# Usage in Coolify:
+#   New Resource -> Docker Compose (Git based)
+#   - Repository: this repo
+#   - Branch: the branch that contains this file
+#   - Docker Compose Location: /docker-compose.coolify.yaml
+#   - Set the required variables (marked with ${VAR:?}) in the Coolify UI:
+#     AIRFLOW__CORE__FERNET_KEY, AIRFLOW__CORE__INTERNAL_API_SECRET_KEY,
+#     AIRFLOW__WEBSERVER__SECRET_KEY, AIRFLOW__API_AUTH__JWT_SECRET,
+#     _AIRFLOW_WWW_USER_USERNAME, _AIRFLOW_WWW_USER_PASSWORD, plus the
+#     PSQL_*/CDSAPI_KEY values used by the DAGs.
+#   - Assign a domain to the `airflow-apiserver` service (e.g.
+#     https://airflow.example.com:8080) and set AIRFLOW__WEBSERVER__BASE_URL
+#     to https://airflow.example.com/alertflow accordingly.
+#
+# Notes:
+#   - The `alertflow` network is managed by this stack; the `infodengue`
+#     network is external and kept so the cluster can reach InfoDengue
+#     resources as before. Coolify normalizes/renames network names during
+#     deployment.
+#   - No `container_name`: Coolify manages container names to avoid collisions.
+#   - No host `ports`: services are reached through the Coolify proxy/domain.
+#   - Secrets are never hardcoded; they are injected from Coolify env vars.
+---
+x-airflow-common:
+  &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      HOST_UID: ${HOST_UID:-1000}
+      HOST_GID: ${HOST_GID:-1000}
+  image: alertflow:${ALERTFLOW_IMAGE_TAG:-latest}
+  environment:
+    &airflow-common-env
+    HOST_UID: ${HOST_UID:-1000}
+    HOST_GID: ${HOST_GID:-1000}
+    AIRFLOW_UID: ${HOST_UID:-1000}
+    AIRFLOW_PORT: ${AIRFLOW_PORT:-8080}
+    AIRFLOW_HOME: /opt/airflow
+    AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
+    AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+    # --
+    AIRFLOW__SMTP__SMTP_HOST: ${AIRFLOW__SMTP__SMTP_HOST:-''}
+    AIRFLOW__SMTP__SMTP_STARTTLS: ${AIRFLOW__SMTP__SMTP_STARTTLS:-true}
+    AIRFLOW__SMTP__SMTP_PORT: ${AIRFLOW__SMTP__SMTP_PORT:-587}
+    AIRFLOW__SMTP__SMTP_MAIL_FROM: ${AIRFLOW__SMTP__SMTP_MAIL_FROM:-''}
+    AIRFLOW__SENTRY__SENTRY_ON: ${AIRFLOW__SENTRY__SENTRY_ON:-false}
+    AIRFLOW__SENTRY__SENTRY_DSN: ${AIRFLOW__SENTRY__SENTRY_DSN:-''}
+    # --
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:?}
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    AIRFLOW__CORE__XCOM_BACKEND: airflow.models.xcom.BaseXCom
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__CORE__LOAD_EXAMPLES: false
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Sao_Paulo
+    AIRFLOW__CORE__INTERNAL_API_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow
+    AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: ${AIRFLOW__CORE__INTERNAL_API_SECRET_KEY:?}
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow/execution
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION:-true}
+    AIRFLOW__CLI__ENDPOINT_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow
+    AIRFLOW__WEBSERVER__BASE_URL: ${AIRFLOW__WEBSERVER__BASE_URL:-http://localhost:8080/alertflow}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:?}
+    AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
+    AIRFLOW__WEBSERVER__WEB_SERVER_PORT: ${AIRFLOW_PORT:-8080}
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: true
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:?}
+    AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
+    AIRFLOW__LOGGING__LOGGING_LEVEL: ${AIRFLOW__LOGGING__LOGGING_LEVEL:-INFO}
+  volumes:
+    - ./alertflow/dags:/opt/airflow/dags
+    - ./alertflow/logs:/opt/airflow/logs
+    - ./alertflow/plugins:/opt/airflow/plugins
+  user: "${HOST_UID:-1000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    hostname: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    networks:
+      - alertflow
+
+  redis:
+    image: redis:7.2-bookworm
+    hostname: redis
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 30s
+    restart: always
+
+  airflow-apiserver:
+    <<: *airflow-common
+    command: api-server
+    hostname: webserver
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://airflow-apiserver:${AIRFLOW_PORT:-8080}/api/v2/monitor/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 60s
+    restart: always
+    networks:
+      - alertflow
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    hostname: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - alertflow
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    hostname: dag-processor
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - alertflow
+      - infodengue
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-worker:
+    <<: *airflow-common
+    command: celery worker
+    hostname: worker
+    healthcheck:
+      # yamllint disable rule:line-length
+      test: ["CMD-SHELL", 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    environment:
+      <<: *airflow-common-env
+      # Required to handle warm shutdown of the celery workers properly
+      # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
+      DUMB_INIT_SETSID: "0"
+    restart: always
+    networks:
+      - alertflow
+      - infodengue
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-triggerer:
+    <<: *airflow-common
+    command: triggerer
+    hostname: triggerer
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - alertflow
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    exclude_from_hc: true
+    command:
+      - -c
+      - |
+        echo "Airflow version:"
+        /entrypoint airflow version
+        mkdir -v -p "${AIRFLOW_HOME}/logs" "${AIRFLOW_HOME}/dags" "${AIRFLOW_HOME}/plugins" "${AIRFLOW_HOME}/config"
+        chown -R "${HOST_UID}:0" "${AIRFLOW_HOME}"
+        echo "Initialization done."
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:?}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:?}
+      _PIP_ADDITIONAL_REQUIREMENTS: ''
+    user: "0:0"
+    networks:
+      - alertflow
+
+  airflow-cli:
+    <<: *airflow-common
+    profiles:
+      - debug
+    exclude_from_hc: true
+    environment:
+      <<: *airflow-common-env
+      CONNECTION_CHECK_MAX_COUNT: "0"
+    command:
+      - bash
+      - -c
+      - airflow
+    depends_on:
+      <<: *airflow-common-depends-on
+    networks:
+      - alertflow
+
+  flower:
+    <<: *airflow-common
+    command: celery flower
+    hostname: flower
+    profiles:
+      - flower
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    networks:
+      - alertflow
+      - infodengue
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-db-volume:
+
+networks:
+  alertflow:
+    driver: bridge
+  infodengue:
+    name: infodengue-${ENV}_infodengue
+    external: true

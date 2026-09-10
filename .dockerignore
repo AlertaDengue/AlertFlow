@@ -3,3 +3,9 @@
 .vscode
 .pre-commit*
 .release*
+.env*
+!env.tpl
+alertflow/logs
+alertflow/plugins
+**/__pycache__
+*.pyc
