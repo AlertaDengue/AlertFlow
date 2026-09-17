@@ -31,7 +31,7 @@ else
     dc="docker compose"
 fi
 
-export COMPOSE_FILE="${PROJECT_DIR}/docker-compose.yaml"
+export COMPOSE_FILE="${PROJECT_DIR}/docker-compose.dev.yaml"
 if [ $# -gt 0 ]; then
     exec $dc run --rm airflow-cli "${@}"
 else

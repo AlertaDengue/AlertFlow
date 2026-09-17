@@ -4,6 +4,7 @@ SERVICE:=
 CMD:=
 ARGS:=
 TIMEOUT:=90
+COMPOSE_FILE ?= docker-compose.dev.yaml
 
 include .env
 
@@ -19,27 +20,27 @@ linter:
 # -- Docker --
 build:
 	set -e
-	docker compose build ${SERVICES}
+	docker compose -f ${COMPOSE_FILE} build ${SERVICES}
 
 start:
 	set -ex
-	docker compose up --remove-orphans -d ${SERVICES}
+	docker compose -f ${COMPOSE_FILE} up --remove-orphans -d ${SERVICES}
 
 stop:
 	set -ex
-	docker compose stop ${ARGS} ${SERVICES}
+	docker compose -f ${COMPOSE_FILE} stop ${ARGS} ${SERVICES}
 
 rm:
 	set -ex
-	docker compose rm ${ARGS} ${SERVICES}
+	docker compose -f ${COMPOSE_FILE} rm ${ARGS} ${SERVICES}
 
 restart: containers-stop containers-start
 
 down:
-	docker compose down ${ARGS}
+	docker compose -f ${COMPOSE_FILE} down ${ARGS}
 
 logs:
-	docker compose logs ${ARGS} ${SERVICES}
+	docker compose -f ${COMPOSE_FILE} logs ${ARGS} ${SERVICES}
 
 wait:
 	timeout ${TIMEOUT} scripts/healthcheck.sh ${SERVICE}

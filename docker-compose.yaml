@@ -1,20 +1,18 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
+# Production Docker Compose stack for AlertFlow.
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+# Usage (Coolify):
+#   New Resource -> Docker Compose (Git based)
+#   - Docker Compose Location: /docker-compose.yaml
+#   - Set the required variables (marked with ${VAR:?}) in the Coolify UI:
+#     AIRFLOW__CORE__FERNET_KEY, AIRFLOW__CORE__INTERNAL_API_SECRET_KEY,
+#     AIRFLOW__WEBSERVER__SECRET_KEY, AIRFLOW__API_AUTH__JWT_SECRET,
+#     _AIRFLOW_WWW_USER_USERNAME, _AIRFLOW_WWW_USER_PASSWORD, plus the
+#     PSQL_*/CDSAPI_KEY values used by the DAGs.
+#   - Assign a domain to the `airflow-apiserver` service and set
+#     AIRFLOW__WEBSERVER__BASE_URL accordingly.
 #
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
+# Usage (standalone):
+#   docker compose up -d
 ---
 x-airflow-common:
   &airflow-common
@@ -22,15 +20,16 @@ x-airflow-common:
     context: .
     dockerfile: Dockerfile
     args:
-      HOST_UID: ${HOST_UID}
-      HOST_GID: ${HOST_GID}
+      HOST_UID: ${HOST_UID:-1000}
+      HOST_GID: ${HOST_GID:-1000}
+  image: alertflow:${ALERTFLOW_IMAGE_TAG:-latest}
   environment:
     &airflow-common-env
-    HOST_UID: ${HOST_UID}
-    HOST_GID: ${HOST_GID}
-    AIRFLOW_UID: ${HOST_UID}
-    AIRFLOW_PORT: ${AIRFLOW_PORT}
-    AIRFLOW_HOME: ${AIRFLOW_HOME:-/opt/airflow}
+    HOST_UID: ${HOST_UID:-1000}
+    HOST_GID: ${HOST_GID:-1000}
+    AIRFLOW_UID: ${HOST_UID:-1000}
+    AIRFLOW_PORT: ${AIRFLOW_PORT:-8080}
+    AIRFLOW_HOME: /opt/airflow
     AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
     AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
     # --
@@ -38,37 +37,37 @@ x-airflow-common:
     AIRFLOW__SMTP__SMTP_STARTTLS: ${AIRFLOW__SMTP__SMTP_STARTTLS:-true}
     AIRFLOW__SMTP__SMTP_PORT: ${AIRFLOW__SMTP__SMTP_PORT:-587}
     AIRFLOW__SMTP__SMTP_MAIL_FROM: ${AIRFLOW__SMTP__SMTP_MAIL_FROM:-''}
-    AIRFLOW__SENTRY__SENTRY_ON: ${AIRFLOW__SENTRY__SENTRY_ON:-true}
+    AIRFLOW__SENTRY__SENTRY_ON: ${AIRFLOW__SENTRY__SENTRY_ON:-false}
     AIRFLOW__SENTRY__SENTRY_DSN: ${AIRFLOW__SENTRY__SENTRY_DSN:-''}
     # --
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
-    AIRFLOW__CORE__DAGS_FOLDER: ${AIRFLOW_HOME}/dags
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:?}
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
     AIRFLOW__CORE__XCOM_BACKEND: airflow.models.xcom.BaseXCom
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
     AIRFLOW__CORE__LOAD_EXAMPLES: false
     AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Sao_Paulo
-    AIRFLOW__CORE__INTERNAL_API_URL: http://alertflow_webserver:${AIRFLOW_PORT}/alertflow
-    AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: ${AIRFLOW__CORE__INTERNAL_API_SECRET_KEY}
-    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://alertflow_webserver:${AIRFLOW_PORT}/alertflow/execution
+    AIRFLOW__CORE__INTERNAL_API_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow
+    AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: ${AIRFLOW__CORE__INTERNAL_API_SECRET_KEY:?}
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow/execution
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION:-true}
-    AIRFLOW__CLI__ENDPOINT_URL: http://alertflow_webserver:${AIRFLOW_PORT}/alertflow
-    AIRFLOW__WEBSERVER__BASE_URL: ${AIRFLOW__WEBSERVER__BASE_URL}
-    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
+    AIRFLOW__CLI__ENDPOINT_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow
+    AIRFLOW__WEBSERVER__BASE_URL: ${AIRFLOW__WEBSERVER__BASE_URL:-http://localhost:8080/alertflow}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:?}
     AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
-    AIRFLOW__WEBSERVER__WEB_SERVER_PORT: ${AIRFLOW_PORT}
+    AIRFLOW__WEBSERVER__WEB_SERVER_PORT: ${AIRFLOW_PORT:-8080}
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: true
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:?}
     AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
     AIRFLOW__LOGGING__LOGGING_LEVEL: ${AIRFLOW__LOGGING__LOGGING_LEVEL:-INFO}
   volumes:
-    - ./alertflow/dags:${AIRFLOW_HOME}/dags
-    - ./alertflow/logs:${AIRFLOW_HOME}/logs
-    - ./alertflow/plugins:${AIRFLOW_HOME}/plugins
-  user: "${HOST_UID}:0"
+    - ./alertflow/dags:/opt/airflow/dags
+    - ./alertflow/logs:/opt/airflow/logs
+    - ./alertflow/plugins:/opt/airflow/plugins
+  user: "${HOST_UID:-1000}:0"
   depends_on:
     &airflow-common-depends-on
     redis:
@@ -80,10 +79,9 @@ services:
   postgres:
     image: postgres:16
     hostname: postgres
-    container_name: alertflow_postgres
     environment:
       POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airflow}
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
@@ -99,7 +97,6 @@ services:
   redis:
     image: redis:7.2-bookworm
     hostname: redis
-    container_name: alertflow_redis
     expose:
       - 6379
     healthcheck:
@@ -109,35 +106,29 @@ services:
       retries: 50
       start_period: 30s
     restart: always
-    networks:
-      - alertflow
 
   airflow-apiserver:
     <<: *airflow-common
     command: api-server
     hostname: webserver
-    container_name: alertflow_webserver
-    ports:
-      - "${AIRFLOW_PORT}:${AIRFLOW_PORT}"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://webserver:${AIRFLOW_PORT}/api/v2/monitor/health"]
+      test: ["CMD", "curl", "--fail", "http://airflow-apiserver:${AIRFLOW_PORT:-8080}/api/v2/monitor/health"]
       interval: 10s
       timeout: 10s
       retries: 60
       start_period: 60s
     restart: always
+    networks:
+      - alertflow
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    networks:
-      - alertflow
 
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
     hostname: scheduler
-    container_name: alertflow_scheduler
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -145,18 +136,17 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    networks:
+      - alertflow
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    networks:
-      - alertflow
 
   airflow-dag-processor:
     <<: *airflow-common
-    hostname: dag-processor
-    container_name: alertflow_dag_processor
     command: dag-processor
+    hostname: dag-processor
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
       interval: 30s
@@ -164,19 +154,18 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    networks:
+      - alertflow
+      - infodengue
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    networks:
-      - alertflow
-      - infodengue
 
   airflow-worker:
     <<: *airflow-common
     command: celery worker
     hostname: worker
-    container_name: alertflow_worker
     healthcheck:
       # yamllint disable rule:line-length
       test: ["CMD-SHELL", 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"']
@@ -190,19 +179,18 @@ services:
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
     restart: always
+    networks:
+      - alertflow
+      - infodengue
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    networks:
-      - alertflow
-      - infodengue
 
   airflow-triggerer:
     <<: *airflow-common
     command: triggerer
     hostname: triggerer
-    container_name: alertflow_triggerer
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
       interval: 30s
@@ -210,98 +198,30 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    networks:
+      - alertflow
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    networks:
-      - alertflow
 
   airflow-init:
     <<: *airflow-common
     entrypoint: /bin/bash
-    # yamllint disable rule:line-length
     command:
       - -c
       - |
-        if [[ -z "${HOST_UID}" ]]; then
-          echo
-          echo -e "\033[1;33mWARNING!!!: HOST_UID not set!\e[0m"
-          echo "If you are on Linux, you SHOULD follow the instructions below to set "
-          echo "HOST_UID environment variable, otherwise files will be owned by root."
-          echo "For other operating systems you can get rid of the warning with manually created .env file:"
-          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
-          echo
-          export HOST_UID=$$(id -u)
-        fi
-        one_meg=1048576
-        mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
-        cpus_available=$$(grep -cE 'cpu[0-9]+' /proc/stat)
-        disk_available=$$(df / | tail -1 | awk '{print $$4}')
-        warning_resources="false"
-        if (( mem_available < 4000 )) ; then
-          echo
-          echo -e "\033[1;33mWARNING!!!: Not enough memory available for Docker.\e[0m"
-          echo "At least 4GB of memory required. You have $$(numfmt --to iec $$((mem_available * one_meg)))"
-          echo
-          warning_resources="true"
-        fi
-        if (( cpus_available < 2 )); then
-          echo
-          echo -e "\033[1;33mWARNING!!!: Not enough CPUS available for Docker.\e[0m"
-          echo "At least 2 CPUs recommended. You have $${cpus_available}"
-          echo
-          warning_resources="true"
-        fi
-        if (( disk_available < one_meg * 10 )); then
-          echo
-          echo -e "\033[1;33mWARNING!!!: Not enough Disk space available for Docker.\e[0m"
-          echo "At least 10 GBs recommended. You have $$(numfmt --to iec $$((disk_available * 1024 )))"
-          echo
-          warning_resources="true"
-        fi
-        if [[ $${warning_resources} == "true" ]]; then
-          echo
-          echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
-          echo "Please follow the instructions to increase amount of resources available:"
-          echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
-          echo
-        fi
-        echo
-        echo "Creating missing opt dirs if missing:"
-        echo
-        mkdir -v -p /opt/airflow/{logs,dags,plugins,config}
-        echo
         echo "Airflow version:"
         /entrypoint airflow version
-        echo
-        echo "Files in shared volumes:"
-        echo
-        ls -la /opt/airflow/{logs,dags,plugins,config}
-        echo
-        echo "Files in shared volumes:"
-        echo
-        ls -la /opt/airflow/{logs,dags,plugins,config}
-        echo
-        echo "Change ownership of files in /opt/airflow to ${HOST_UID}:0"
-        echo
-        chown -R "${HOST_UID}:0" /opt/airflow/
-        echo
-        echo "Change ownership of files in shared volumes to ${HOST_UID}:0"
-        echo
-        chown -v -R "${HOST_UID}:0" /opt/airflow/{logs,dags,plugins,config}
-        echo
-        echo "Files in shared volumes:"
-        echo
-        ls -la /opt/airflow/{logs,dags,plugins,config}
-
-    # yamllint enable rule:line-length
+        mkdir -v -p "${AIRFLOW_HOME}/logs" "${AIRFLOW_HOME}/dags" "${AIRFLOW_HOME}/plugins" "${AIRFLOW_HOME}/config"
+        chown -R "${HOST_UID}:0" "${AIRFLOW_HOME}"
+        echo "Initialization done."
     environment:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:?}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:?}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     networks:
@@ -314,7 +234,6 @@ services:
     environment:
       <<: *airflow-common-env
       CONNECTION_CHECK_MAX_COUNT: "0"
-    # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
     command:
       - bash
       - -c
@@ -328,11 +247,8 @@ services:
     <<: *airflow-common
     command: celery flower
     hostname: flower
-    container_name: alertflow_flower
     profiles:
       - flower
-    ports:
-      - "5555:5555"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
       interval: 30s
@@ -340,13 +256,13 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    networks:
+      - alertflow
+      - infodengue
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    networks:
-      - alertflow
-      - infodengue
 
 volumes:
   postgres-db-volume:
