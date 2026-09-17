@@ -95,11 +95,11 @@ jobs:
 
     - name: Build Base Image
       run: |
-        docker compose build
+        docker compose -f docker-compose.dev.yaml build
 
     - name: Start Airflow
       run: |
-        docker compose up -d
+        docker compose -f docker-compose.dev.yaml up -d
 
     - name: Wait Containers
       run: |
