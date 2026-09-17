@@ -53,7 +53,7 @@ uri = Variable.get("psql_main_uri", deserialize_json=True)
 with DAG(
     dag_id="VEGETATION_INDEX_METRICS",
     default_args=default_args,
-    start_date=datetime(2020, 1, 1, 3, 0),
+    start_date=datetime(2026, 9, 17, 3, 0),
     schedule=timedelta(days=16),
     catchup=True,
     tags=["geospatial", "vegetation"],
