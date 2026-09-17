@@ -24,16 +24,14 @@
 # under the License.
 #
 ---
-x-airflow-common:
-  &airflow-common
+x-airflow-common: &airflow-common
   build:
     context: .
     dockerfile: Dockerfile
     args:
       HOST_UID: ${HOST_UID}
       HOST_GID: ${HOST_GID}
-  environment:
-    &airflow-common-env
+  environment: &airflow-common-env
     HOST_UID: ${HOST_UID}
     HOST_GID: ${HOST_GID}
     AIRFLOW_UID: ${HOST_UID}
@@ -77,8 +75,7 @@ x-airflow-common:
     - ./alertflow/logs:${AIRFLOW_HOME}/logs
     - ./alertflow/plugins:${AIRFLOW_HOME}/plugins
   user: "${HOST_UID}:0"
-  depends_on:
-    &airflow-common-depends-on
+  depends_on: &airflow-common-depends-on
     redis:
       condition: service_healthy
     postgres:
