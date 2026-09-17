@@ -60,6 +60,8 @@ x-airflow-common: &airflow-common
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:?}
     AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
+    AIRFLOW__API__HOST: 0.0.0.0
+    AIRFLOW__API__PORT: ${AIRFLOW_PORT:-8080}
     AIRFLOW__LOGGING__LOGGING_LEVEL: ${AIRFLOW__LOGGING__LOGGING_LEVEL:-INFO}
   volumes:
     - ./alertflow/dags:/opt/airflow/dags
@@ -108,6 +110,8 @@ services:
     <<: *airflow-common
     command: api-server
     hostname: webserver
+    ports:
+      - "${AIRFLOW_PORT:-8080}:${AIRFLOW_PORT:-8080}"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://airflow-apiserver:${AIRFLOW_PORT:-8080}/api/v2/monitor/health"]
       interval: 10s
