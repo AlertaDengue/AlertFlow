@@ -14,8 +14,7 @@
 # Usage (standalone):
 #   docker compose up -d
 ---
-x-airflow-common:
-  &airflow-common
+x-airflow-common: &airflow-common
   build:
     context: .
     dockerfile: Dockerfile
@@ -23,8 +22,7 @@ x-airflow-common:
       HOST_UID: ${HOST_UID:-1000}
       HOST_GID: ${HOST_GID:-1000}
   image: alertflow:${ALERTFLOW_IMAGE_TAG:-latest}
-  environment:
-    &airflow-common-env
+  environment: &airflow-common-env
     HOST_UID: ${HOST_UID:-1000}
     HOST_GID: ${HOST_GID:-1000}
     AIRFLOW_UID: ${HOST_UID:-1000}
@@ -68,8 +66,7 @@ x-airflow-common:
     - ./alertflow/logs:/opt/airflow/logs
     - ./alertflow/plugins:/opt/airflow/plugins
   user: "${HOST_UID:-1000}:0"
-  depends_on:
-    &airflow-common-depends-on
+  depends_on: &airflow-common-depends-on
     redis:
       condition: service_healthy
     postgres:
