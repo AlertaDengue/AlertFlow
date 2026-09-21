@@ -8,8 +8,11 @@
 #     AIRFLOW__WEBSERVER__SECRET_KEY, AIRFLOW__API_AUTH__JWT_SECRET,
 #     _AIRFLOW_WWW_USER_USERNAME, _AIRFLOW_WWW_USER_PASSWORD, plus the
 #     PSQL_*/CDSAPI_KEY values used by the DAGs.
-#   - Assign a domain to the `airflow-apiserver` service and set
-#     AIRFLOW__WEBSERVER__BASE_URL accordingly.
+#   - In the Coolify UI, set the `airflow-apiserver` service's Domains field to
+#     https://alertflow.dengue.mat.br:8081 (the suffix is the internal container
+#     port) and set AIRFLOW__WEBSERVER__BASE_URL=https://alertflow.dengue.mat.br.
+#     Coolify generates the proxy labels and TLS certificate automatically, so the
+#     service is routed by hostname instead of a path prefix.
 #
 # Usage (standalone):
 #   docker compose up -d
@@ -45,12 +48,12 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
     AIRFLOW__CORE__LOAD_EXAMPLES: false
     AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Sao_Paulo
-    AIRFLOW__CORE__INTERNAL_API_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow
+    AIRFLOW__CORE__INTERNAL_API_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}
     AIRFLOW__CORE__INTERNAL_API_SECRET_KEY: ${AIRFLOW__CORE__INTERNAL_API_SECRET_KEY:?}
-    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow/execution
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/execution
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION:-true}
-    AIRFLOW__CLI__ENDPOINT_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}/alertflow
-    AIRFLOW__WEBSERVER__BASE_URL: ${AIRFLOW__WEBSERVER__BASE_URL:-http://localhost:8080/alertflow}
+    AIRFLOW__CLI__ENDPOINT_URL: http://airflow-apiserver:${AIRFLOW_PORT:-8080}
+    AIRFLOW__WEBSERVER__BASE_URL: ${AIRFLOW__WEBSERVER__BASE_URL:-https://alertflow.dengue.mat.br}
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:?}
     AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
     AIRFLOW__WEBSERVER__WEB_SERVER_PORT: ${AIRFLOW_PORT:-8080}
@@ -110,8 +113,8 @@ services:
     <<: *airflow-common
     command: api-server
     hostname: webserver
-    ports:
-      - "${AIRFLOW_PORT:-8080}:${AIRFLOW_PORT:-8080}"
+    expose:
+      - "${AIRFLOW_PORT:-8080}"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://airflow-apiserver:${AIRFLOW_PORT:-8080}/api/v2/monitor/health"]
       interval: 10s
