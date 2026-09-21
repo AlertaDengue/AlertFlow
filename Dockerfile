@@ -87,4 +87,13 @@ RUN python3.12 -m venv /opt/airflow/envs/geospatial_env \
   && /opt/airflow/envs/geospatial_env/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
   && /opt/airflow/envs/geospatial_env/bin/pip install --no-cache-dir -r ${AIRFLOW_HOME}/requirements-vegetation-metrics.txt
 
-ENTRYPOINT [ "/entrypoint.sh" ]
+USER root
+
+# Airflow containers run as HOST_UID with GID 0.
+# Keep Airflow-installed files accessible to the runtime user.
+RUN chgrp -R 0 /home/airflow /opt/airflow \
+  && chmod -R g=u /home/airflow /opt/airflow
+
+USER airflow
+
+ENTRYPOINT ["/entrypoint.sh"]
