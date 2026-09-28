@@ -1,6 +1,18 @@
 Release Notes
 ---
 
+## 2.2.0 (2026-09-28)
+
+* feat: coolify the docker cluster (#52) ([1270793](https://github.com/AlertaDengue/AlertFlow/commit/1270793)), closes [#52](https://github.com/AlertaDengue/AlertFlow/issues/52)
+* feat: reinclude pysus dag (#60) ([b952800](https://github.com/AlertaDengue/AlertFlow/commit/b952800)), closes [#60](https://github.com/AlertaDengue/AlertFlow/issues/60)
+* fix: remove required /alertflow path on webserver (#58) ([e7a09bb](https://github.com/AlertaDengue/AlertFlow/commit/e7a09bb)), closes [#58](https://github.com/AlertaDengue/AlertFlow/issues/58)
+* fix: update satellite with the NaN values fixed (#51) ([adde831](https://github.com/AlertaDengue/AlertFlow/commit/adde831)), closes [#51](https://github.com/AlertaDengue/AlertFlow/issues/51)
+* fix(coolify): prevent restart loop on airflow-init one-shot (#55) ([f4d0056](https://github.com/AlertaDengue/AlertFlow/commit/f4d0056)), closes [#55](https://github.com/AlertaDengue/AlertFlow/issues/55)
+* fix(coolify): split in compose and dev compose (#53) ([6deb6ee](https://github.com/AlertaDengue/AlertFlow/commit/6deb6ee)), closes [#53](https://github.com/AlertaDengue/AlertFlow/issues/53)
+* fix(coolify): use inline yaml anchors for Symfony parser (#54) ([efc19ff](https://github.com/AlertaDengue/AlertFlow/commit/efc19ff)), closes [#54](https://github.com/AlertaDengue/AlertFlow/issues/54)
+* chore: update start dates of dags (#57) ([107c09e](https://github.com/AlertaDengue/AlertFlow/commit/107c09e)), closes [#57](https://github.com/AlertaDengue/AlertFlow/issues/57)
+* letfix(coolify): bind api-server to AIRFLOW_PORT via [api] config (#56) ([5dc61cb](https://github.com/AlertaDengue/AlertFlow/commit/5dc61cb)), closes [#56](https://github.com/AlertaDengue/AlertFlow/issues/56)
+
 ## [2.1.3](https://github.com/AlertaDengue/AlertFlow/compare/2.1.2...2.1.3) (2026-08-11)
 
 ## [2.1.2](https://github.com/AlertaDengue/AlertFlow/compare/2.1.1...2.1.2) (2026-08-10)
