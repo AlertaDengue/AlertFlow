@@ -7,7 +7,7 @@
 #     AIRFLOW__CORE__FERNET_KEY, AIRFLOW__CORE__INTERNAL_API_SECRET_KEY,
 #     AIRFLOW__WEBSERVER__SECRET_KEY, AIRFLOW__API_AUTH__JWT_SECRET,
 #     _AIRFLOW_WWW_USER_USERNAME, _AIRFLOW_WWW_USER_PASSWORD, plus the
-#     PSQL_*/CDSAPI_KEY values used by the DAGs.
+#     PSQL_*/CDSAPI_KEY/PYSUS_* values used by the DAGs.
 #   - In the Coolify UI, set the `airflow-apiserver` service's Domains field to
 #     https://alertflow.dengue.mat.br:8081 (the suffix is the internal container
 #     port) and set AIRFLOW__WEBSERVER__BASE_URL=https://alertflow.dengue.mat.br.
@@ -33,6 +33,9 @@ x-airflow-common: &airflow-common
     AIRFLOW_HOME: /opt/airflow
     AIRFLOW_VAR_PSQL_MAIN_URI: '{"PSQL_MAIN_URI":"${PSQL_URI_MAIN}"}'
     AIRFLOW_VAR_CDSAPI_KEY: '{"CDSAPI_KEY":"${CDSAPI_KEY}"}'
+    AIRFLOW_VAR_PYSUS_S3_ACCESS_KEY: '{"PYSUS_S3_ACCESS_KEY":"${PYSUS_S3_ACCESS_KEY}"}'
+    AIRFLOW_VAR_PYSUS_S3_SECRET_KEY: '{"PYSUS_S3_SECRET_KEY":"${PYSUS_S3_SECRET_KEY}"}'
+    AIRFLOW_VAR_PYSUS_DADOSGOV_TOKEN: '{"PYSUS_DADOSGOV_TOKEN":"${PYSUS_DADOSGOV_TOKEN}"}'
     # --
     AIRFLOW__SMTP__SMTP_HOST: ${AIRFLOW__SMTP__SMTP_HOST:-''}
     AIRFLOW__SMTP__SMTP_STARTTLS: ${AIRFLOW__SMTP__SMTP_STARTTLS:-true}

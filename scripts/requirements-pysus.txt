@@ -1,0 +1,10 @@
+# Runtime dependencies for the PySUS external interpreter (Python 3.12).
+#
+# PySUS itself is installed from source at the tag defined by the PYSUS_REF
+# build arg in the Dockerfile, because the `pysus.management` package (the
+# database check/sync engine) is excluded from the published PyPI wheel.
+#
+# These two packages are what @task.external_python needs to communicate with
+# the Airflow task runner; Airflow itself (Python 3.14) cannot host PySUS.
+apache-airflow-task-sdk==1.2.1
+pendulum==3.2.0

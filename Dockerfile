@@ -11,6 +11,7 @@ USER root
 
 ARG HOST_UID
 ARG HOST_GID
+ARG PYSUS_REF=2.11.3
 
 RUN apt-get update \
   && apt-get install -y \
@@ -71,7 +72,7 @@ ENV PATH "$PATH:/home/airflow/.local/bin"
 ENV PATH "$PATH:/usr/bin/dirname"
 
 COPY --chown=airflow scripts/entrypoint.sh /entrypoint.sh
-COPY --chown=airflow pyproject.toml README.md scripts/requirements-vegetation-metrics.txt ${AIRFLOW_HOME}/
+COPY --chown=airflow pyproject.toml poetry.lock README.md scripts/requirements-vegetation-metrics.txt scripts/requirements-pysus.txt ${AIRFLOW_HOME}/
 RUN chmod +x /entrypoint.sh
 
 USER airflow
@@ -86,5 +87,19 @@ RUN poetry config virtualenvs.create false \
 RUN python3.12 -m venv /opt/airflow/envs/geospatial_env \
   && /opt/airflow/envs/geospatial_env/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
   && /opt/airflow/envs/geospatial_env/bin/pip install --no-cache-dir -r ${AIRFLOW_HOME}/requirements-vegetation-metrics.txt
+
+# PySUS requires Python <3.14, so it lives in its own Python 3.12 interpreter
+# (Airflow runs on 3.14). The management check/sync engine is excluded from the
+# published wheel, so PySUS is installed from source and the management package
+# is overlaid into site-packages afterwards.
+RUN git clone --depth 1 --branch ${PYSUS_REF} https://github.com/AlertaDengue/PySUS.git /tmp/pysus-src \
+  && python3.12 -m venv /opt/airflow/envs/pysus_env \
+  && /opt/airflow/envs/pysus_env/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
+  && /opt/airflow/envs/pysus_env/bin/pip install --no-cache-dir -r ${AIRFLOW_HOME}/requirements-pysus.txt \
+  && /opt/airflow/envs/pysus_env/bin/pip install --no-cache-dir /tmp/pysus-src \
+  && PYSUS_SITE="$(/opt/airflow/envs/pysus_env/bin/python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')" \
+  && cp -r /tmp/pysus-src/pysus/management "${PYSUS_SITE}/pysus/management" \
+  && /opt/airflow/envs/pysus_env/bin/python -c "from pysus.management import SyncEngine; print('pysus management OK:', SyncEngine)" \
+  && rm -rf /tmp/pysus-src
 
 ENTRYPOINT [ "/entrypoint.sh" ]
