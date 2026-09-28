@@ -29,6 +29,9 @@ env:
 
 jobs:
   main:
+    permissions:
+      contents: read
+      pull-requests: read
 
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -41,10 +44,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - uses: actions/setup-node@v3
       with:
-        node-version: 20.11.0
+        fetch-depth: 0
 
     # Check if the repository is a fork
     - name: Check if repository is a fork
@@ -63,10 +64,10 @@ jobs:
           export AIRFLOW_PSQL_DB_MAIN="${{ secrets.CI_PSQL_DB }}"
         fi
 
-    - name: Semantic Release Title Check
-      uses: osl-incubator/semantic-release-pr-title-check@v1.4.1
+    - name: Lint Commit Messages
+      uses: wagoid/commitlint-github-action@v6
       with:
-        convention-name: conventionalcommits
+        configFile: commitlint.config.mjs
 
     - uses: conda-incubator/setup-miniconda@v3
       with:
@@ -88,6 +89,10 @@ jobs:
     - name: Lint All Files
       run: |
         make linter
+
+    - name: Run Unit Tests
+      run: |
+        make test
 
     - name: Create Docker network
       run: |
