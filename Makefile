@@ -17,6 +17,10 @@ env:
 linter:
 	pre-commit run --all-files --verbose
 
+.PHONY: test
+test:
+	poetry run python -m unittest discover -s tests -t . -v
+
 # -- Docker --
 build:
 	set -e
